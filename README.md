@@ -9,9 +9,9 @@ package main
 
 import (
   "net/http"
-	"time"
+  "time"
 
-	health "github.com/hellofresh/health-go"
+  health "github.com/hellofresh/health-go"
 )
 
 func main() {
