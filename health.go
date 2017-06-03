@@ -4,9 +4,11 @@ import (
 	"encoding/json"
 	"net/http"
 	"runtime"
+	"sync"
 	"time"
 )
 
+var mu sync.Mutex
 var checks []Config
 
 const (
@@ -38,11 +40,15 @@ type System struct {
 }
 
 func Register(c Config) {
+	mu.Lock()
+	defer mu.Unlock()
 	checks = append(checks, c)
 }
 
 func Handler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		mu.Lock()
+		defer mu.Unlock()
 		status := statusOK
 		now := time.Now()
 		failures := make(map[string]string)
