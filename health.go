@@ -42,7 +42,7 @@ type System struct {
 	AllocBytes       int    `json:"alloc_bytes"`
 }
 
-// Register registers a check to be evaluated each given period.
+// Register registers a check config to be performed.
 func Register(c Config) {
 	mu.Lock()
 	defer mu.Unlock()
