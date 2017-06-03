@@ -54,42 +54,55 @@ func Handler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		mu.Lock()
 		defer mu.Unlock()
-		status := statusOK
-		now := time.Now()
-		failures := make(map[string]string)
 
+		status := statusOK
+		failures := make(map[string]string)
+		errChan := make(chan error, len(checks))
 		for _, c := range checks {
-			err := c.Check()
-			if err != nil {
-				failures[c.Name] = err.Error()
-				if c.SkipOnErr && status != statusUnavailable {
-					status = statusPartiallyAvailable
-				} else {
-					status = statusUnavailable
+			go func(errChan chan error, fn func() error) {
+				errChan <- fn()
+			}(errChan, c.Check)
+
+		loop:
+			for {
+				select {
+				case <-time.After(c.Timeout):
+					failures[c.Name] = "Timeout during health check"
+					setStatus(&status, c.SkipOnErr)
+					break loop
+				case err := <-errChan:
+					if err != nil {
+						failures[c.Name] = err.Error()
+						setStatus(&status, c.SkipOnErr)
+					}
+					break loop
 				}
 			}
 		}
 
-		c := Check{
-			Status:    status,
-			Timestamp: now,
-			Failures:  failures,
-			System:    systemMetrics(),
-		}
-
+		c := newCheck(status, failures)
 		data, err := json.Marshal(c)
 		if err != nil {
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/json")
 		code := http.StatusOK
 		if status == statusUnavailable {
 			code = http.StatusServiceUnavailable
 		}
+		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(code)
 		w.Write(data)
 	})
+}
+
+func newCheck(status string, failures map[string]string) Check {
+	return Check{
+		Status:    status,
+		Timestamp: time.Now(),
+		Failures:  failures,
+		System:    systemMetrics(),
+	}
 }
 
 func systemMetrics() System {
@@ -101,5 +114,13 @@ func systemMetrics() System {
 		TotalAllocBytes:  int(s.TotalAlloc),
 		HeapObjectsCount: int(s.HeapObjects),
 		AllocBytes:       int(s.Alloc),
+	}
+}
+
+func setStatus(status *string, skipOnErr bool) {
+	if skipOnErr && *status != statusUnavailable {
+		*status = statusPartiallyAvailable
+	} else {
+		*status = statusUnavailable
 	}
 }
