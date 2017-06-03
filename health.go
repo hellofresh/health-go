@@ -17,6 +17,7 @@ const (
 	statusUnavailable        = "Unavailable"
 )
 
+// Config carries the parameters to run the check.
 type Config struct {
 	Name      string
 	Timeout   time.Duration
@@ -24,6 +25,7 @@ type Config struct {
 	Check     func() error
 }
 
+// Check represents the health check response.
 type Check struct {
 	Status    string            `json:"status"`
 	Timestamp time.Time         `json:"timestamp"`
@@ -31,6 +33,7 @@ type Check struct {
 	System    `json:"system"`
 }
 
+// System runtime variables about the go process.
 type System struct {
 	Version          string `json:"version"`
 	GoroutinesCount  int    `json:"goroutines_count"`
@@ -39,12 +42,14 @@ type System struct {
 	AllocBytes       int    `json:"alloc_bytes"`
 }
 
+// Register registers a check to be evaluated each given period.
 func Register(c Config) {
 	mu.Lock()
 	defer mu.Unlock()
 	checks = append(checks, c)
 }
 
+// Handler returns an HTTP handler (http.HandlerFunc)
 func Handler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		mu.Lock()
