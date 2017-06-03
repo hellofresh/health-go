@@ -46,54 +46,62 @@ type System struct {
 func Register(c Config) {
 	mu.Lock()
 	defer mu.Unlock()
+
+	if c.Timeout == 0 {
+		c.Timeout = time.Second * 2
+	}
+
 	checks = append(checks, c)
 }
 
-// Handler returns an HTTP handler (http.HandlerFunc)
+// Handler returns an HTTP handler (http.HandlerFunc).
 func Handler() http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		mu.Lock()
-		defer mu.Unlock()
+	return http.HandlerFunc(HandlerFunc)
+}
 
-		status := statusOK
-		failures := make(map[string]string)
-		errChan := make(chan error, len(checks))
-		for _, c := range checks {
-			go func(errChan chan error, fn func() error) {
-				errChan <- fn()
-			}(errChan, c.Check)
+// HandlerFunc is the HTTP handler function.
+func HandlerFunc(w http.ResponseWriter, r *http.Request) {
+	mu.Lock()
+	defer mu.Unlock()
 
-		loop:
-			for {
-				select {
-				case <-time.After(c.Timeout):
-					failures[c.Name] = "Timeout during health check"
+	status := statusOK
+	failures := make(map[string]string)
+	errChan := make(chan error, len(checks))
+	for _, c := range checks {
+		go func(errChan chan error, fn func() error) {
+			errChan <- fn()
+		}(errChan, c.Check)
+
+	loop:
+		for {
+			select {
+			case <-time.After(c.Timeout):
+				failures[c.Name] = "Timeout during health check"
+				setStatus(&status, c.SkipOnErr)
+				break loop
+			case err := <-errChan:
+				if err != nil {
+					failures[c.Name] = err.Error()
 					setStatus(&status, c.SkipOnErr)
-					break loop
-				case err := <-errChan:
-					if err != nil {
-						failures[c.Name] = err.Error()
-						setStatus(&status, c.SkipOnErr)
-					}
-					break loop
 				}
+				break loop
 			}
 		}
+	}
 
-		c := newCheck(status, failures)
-		data, err := json.Marshal(c)
-		if err != nil {
-			return
-		}
+	c := newCheck(status, failures)
+	data, err := json.Marshal(c)
+	if err != nil {
+		return
+	}
 
-		code := http.StatusOK
-		if status == statusUnavailable {
-			code = http.StatusServiceUnavailable
-		}
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(code)
-		w.Write(data)
-	})
+	code := http.StatusOK
+	if status == statusUnavailable {
+		code = http.StatusServiceUnavailable
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(code)
+	w.Write(data)
 }
 
 func newCheck(status string, failures map[string]string) Check {
