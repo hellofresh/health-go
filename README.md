@@ -8,7 +8,7 @@
 package main
 
 import (
-	"net/http"
+  "net/http"
 	"time"
 
 	health "github.com/hellofresh/health-go"
