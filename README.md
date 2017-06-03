@@ -68,7 +68,7 @@ HTTP/1.1 200 OK
   "status": "Partially Available",
   "timestamp": "2017-01-01T00:00:00.413567856+033:00",
   "failures": {
-    "rabbitmq": "The error message"
+    "rabbitmq": "Failed duriung rabbitmq health check"
   },
   "system": {
     "version": "go1.8",
@@ -86,7 +86,7 @@ HTTP/1.1 503 Service Unavailable
   "status": "Unavailable",
   "timestamp": "2017-01-01T00:00:00.413567856+033:00",
   "failures": {
-    "mongodb": "The message error"
+    "mongodb": "Failed duriung mongodb health check"
   },
   "system": {
     "version": "go1.8",
