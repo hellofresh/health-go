@@ -8,10 +8,10 @@
 package main
 
 import (
-	"net/http"
-	"time"
+  "net/http"
+  "time"
 
-	health "github.com/hellofresh/health-go"
+  health "github.com/hellofresh/health-go"
 )
 
 func main() {
@@ -32,7 +32,7 @@ func main() {
   })
 
   http.Handle("/status", health.Handler())
-	http.ListenAndServe(":3000", nil)
+  http.ListenAndServe(":3000", nil)
 }
 ```
 
@@ -46,6 +46,7 @@ Get the health of the application.
 curl localhost:3000/status
 ```
 - Response:
+
 HTTP/1.1 200 OK
 ```json
 {
