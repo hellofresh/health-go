@@ -16,17 +16,16 @@ import (
 
 func main() {
   health.Register(health.Config{
-    Name: "rabbit_mq",
+    Name: "rabbitmq",
     Timeout: time.Second*5,
     SkipOnErr: true,
-    CheckFunc: func() error {
+    Check: func() error {
       // rabbitmq health check implementation goes here
     })
 
   health.Register(health.Config{
     Name: "mongodb",
-    Timeout: time.Second*5,
-    CheckFunc: func() error {
+    Check: func() error {
       // mongo_db health check implementation goes here
   })
 
@@ -35,9 +34,17 @@ func main() {
 }
 ```
 
+### API Documentation
+#### `GET /status`
+Get the health of the application.
+- Method: `GET`
+- Endpoint: `/status`
+- Shell:
 ```
-$ http GET localhost:8000/status
-HTTP/1.1 503 Service Unavailable
+curl localhost:3000/status
+```
+- Response:
+```json
 {
   "status": "Unavailable",
   "timestamp": "2017-01-01T00:00:00.413567856+033:00",
@@ -45,11 +52,11 @@ HTTP/1.1 503 Service Unavailable
     "mongodb": "Error"
   },
   "system": {
-    "alloc_bytes": 234523,
+    "version": "go1.8",
     "goroutines_count": 4,
-    "heap_objects_count": 21323,
     "total_alloc_bytes": 21321,
-    "version": "go1.8"
+    "heap_objects_count": 21323,
+    "alloc_bytes": 234523
   }
 }
 ```
