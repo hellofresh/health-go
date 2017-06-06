@@ -1,4 +1,4 @@
-package healthgo
+package health
 
 import (
 	"encoding/json"

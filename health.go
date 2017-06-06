@@ -1,4 +1,4 @@
-package healthgo
+package health
 
 import (
 	"encoding/json"
@@ -63,7 +63,6 @@ func Handler() http.Handler {
 func HandlerFunc(w http.ResponseWriter, r *http.Request) {
 	mu.Lock()
 	defer mu.Unlock()
-
 	status := statusOK
 	failures := make(map[string]string)
 	errChan := make(chan error, len(checks))
@@ -89,9 +88,11 @@ func HandlerFunc(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	w.Header().Set("Content-Type", "application/json")
 	c := newCheck(status, failures)
 	data, err := json.Marshal(c)
 	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
@@ -99,7 +100,6 @@ func HandlerFunc(w http.ResponseWriter, r *http.Request) {
 	if status == statusUnavailable {
 		code = http.StatusServiceUnavailable
 	}
-	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
 	w.Write(data)
 }
@@ -109,11 +109,11 @@ func newCheck(status string, failures map[string]string) Check {
 		Status:    status,
 		Timestamp: time.Now(),
 		Failures:  failures,
-		System:    systemMetrics(),
+		System:    newSystemMetrics(),
 	}
 }
 
-func systemMetrics() System {
+func newSystemMetrics() System {
 	s := runtime.MemStats{}
 	runtime.ReadMemStats(&s)
 	return System{
