@@ -42,15 +42,19 @@ type System struct {
 	AllocBytes       int    `json:"alloc_bytes"`
 }
 
+type checkResponse struct {
+	name      string
+	skipOnErr bool
+	err       error
+}
+
 // Register registers a check config to be performed.
 func Register(c Config) {
 	mu.Lock()
 	defer mu.Unlock()
-
 	if c.Timeout == 0 {
 		c.Timeout = time.Second * 2
 	}
-
 	checks = append(checks, c)
 }
 
@@ -65,11 +69,11 @@ func HandlerFunc(w http.ResponseWriter, r *http.Request) {
 	defer mu.Unlock()
 	status := statusOK
 	failures := make(map[string]string)
-	errChan := make(chan error, len(checks))
+	resChan := make(chan checkResponse, len(checks))
 	for _, c := range checks {
-		go func(errChan chan error, fn func() error) {
-			errChan <- fn()
-		}(errChan, c.Check)
+		go func(c Config, resChan chan checkResponse) {
+			resChan <- checkResponse{c.Name, c.SkipOnErr, c.Check()}
+		}(c, resChan)
 
 	loop:
 		for {
@@ -78,10 +82,10 @@ func HandlerFunc(w http.ResponseWriter, r *http.Request) {
 				failures[c.Name] = "Timeout during health check"
 				setStatus(&status, c.SkipOnErr)
 				break loop
-			case err := <-errChan:
-				if err != nil {
-					failures[c.Name] = err.Error()
-					setStatus(&status, c.SkipOnErr)
+			case res := <-resChan:
+				if res.err != nil {
+					failures[res.name] = res.err.Error()
+					setStatus(&status, res.skipOnErr)
 				}
 				break loop
 			}
