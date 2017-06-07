@@ -97,6 +97,7 @@ func HandlerFunc(w http.ResponseWriter, r *http.Request) {
 	data, err := json.Marshal(c)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
