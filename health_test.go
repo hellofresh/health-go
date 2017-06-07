@@ -1,4 +1,4 @@
-package healthgo
+package health
 
 import (
 	"encoding/json"
@@ -6,14 +6,13 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
-	"time"
 )
 
 const (
 	checkErr = "Failed duriung rabbitmq health check"
 )
 
-func TestHealth(t *testing.T) {
+func TestHealthHandler(t *testing.T) {
 	res := httptest.NewRecorder()
 	req, err := http.NewRequest("GET", "/status", nil)
 	if err != nil {
@@ -22,7 +21,6 @@ func TestHealth(t *testing.T) {
 
 	Register(Config{
 		Name:      "rabbitmq",
-		Timeout:   time.Second * 5,
 		SkipOnErr: true,
 		Check:     func() error { return errors.New(checkErr) },
 	})

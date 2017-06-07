@@ -1,4 +1,4 @@
-package healthgo
+package health
 
 import (
 	"encoding/json"
@@ -42,15 +42,19 @@ type System struct {
 	AllocBytes       int    `json:"alloc_bytes"`
 }
 
+type checkResponse struct {
+	name      string
+	skipOnErr bool
+	err       error
+}
+
 // Register registers a check config to be performed.
 func Register(c Config) {
 	mu.Lock()
 	defer mu.Unlock()
-
 	if c.Timeout == 0 {
 		c.Timeout = time.Second * 2
 	}
-
 	checks = append(checks, c)
 }
 
@@ -63,14 +67,13 @@ func Handler() http.Handler {
 func HandlerFunc(w http.ResponseWriter, r *http.Request) {
 	mu.Lock()
 	defer mu.Unlock()
-
 	status := statusOK
 	failures := make(map[string]string)
-	errChan := make(chan error, len(checks))
+	resChan := make(chan checkResponse, len(checks))
 	for _, c := range checks {
-		go func(errChan chan error, fn func() error) {
-			errChan <- fn()
-		}(errChan, c.Check)
+		go func(c Config, resChan chan checkResponse) {
+			resChan <- checkResponse{c.Name, c.SkipOnErr, c.Check()}
+		}(c, resChan)
 
 	loop:
 		for {
@@ -79,19 +82,22 @@ func HandlerFunc(w http.ResponseWriter, r *http.Request) {
 				failures[c.Name] = "Timeout during health check"
 				setStatus(&status, c.SkipOnErr)
 				break loop
-			case err := <-errChan:
-				if err != nil {
-					failures[c.Name] = err.Error()
-					setStatus(&status, c.SkipOnErr)
+			case res := <-resChan:
+				if res.err != nil {
+					failures[res.name] = res.err.Error()
+					setStatus(&status, res.skipOnErr)
 				}
 				break loop
 			}
 		}
 	}
 
+	w.Header().Set("Content-Type", "application/json")
 	c := newCheck(status, failures)
 	data, err := json.Marshal(c)
 	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -99,7 +105,6 @@ func HandlerFunc(w http.ResponseWriter, r *http.Request) {
 	if status == statusUnavailable {
 		code = http.StatusServiceUnavailable
 	}
-	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
 	w.Write(data)
 }
@@ -109,11 +114,11 @@ func newCheck(status string, failures map[string]string) Check {
 		Status:    status,
 		Timestamp: time.Now(),
 		Failures:  failures,
-		System:    systemMetrics(),
+		System:    newSystemMetrics(),
 	}
 }
 
-func systemMetrics() System {
+func newSystemMetrics() System {
 	s := runtime.MemStats{}
 	runtime.ReadMemStats(&s)
 	return System{

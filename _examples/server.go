@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"time"
 
-	health "github.com/hellofresh/health-go"
+	"github.com/hellofresh/health-go"
 )
 
 func main() {
