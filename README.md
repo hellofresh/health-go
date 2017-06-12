@@ -3,7 +3,9 @@
 * Exposes an HTTP handler that retrieves health status of the application.
 
 ### Usage
+The library exports `Handler` and `HandlerFunc` functions which are fully compatible with `net/http`.
 
+#### Handler
 ```go
 package main
 
@@ -11,7 +13,7 @@ import (
   "net/http"
   "time"
 
-  health "github.com/hellofresh/health-go"
+  "github.com/hellofresh/health-go"
 )
 
 func main() {
@@ -32,6 +34,41 @@ func main() {
   })
 
   http.Handle("/status", health.Handler())
+  http.ListenAndServe(":3000", nil)
+}
+```
+
+#### HandlerFunc
+```go
+package main
+
+import (
+  "net/http"
+  "time"
+
+  "github.com/hellofresh/health-go"
+  "github.com/pressly/chi"
+)
+
+func main() {
+  health.Register(health.Config{
+    Name: "rabbitmq",
+    Timeout: time.Second*5,
+    SkipOnErr: true,
+    Check: func() error {
+      // rabbitmq health check implementation goes here
+    },
+  })
+
+  health.Register(health.Config{
+    Name: "mongodb",
+    Check: func() error {
+      // mongo_db health check implementation goes here
+    },
+  })
+
+  r := chi.NewRouter()
+	r.Get("/status", health.HandlerFunc)
   http.ListenAndServe(":3000", nil)
 }
 ```
