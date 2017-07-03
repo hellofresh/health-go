@@ -46,8 +46,8 @@ import (
   "net/http"
   "time"
 
+  "github.com/go-chi/chi"
   "github.com/hellofresh/health-go"
-  "github.com/pressly/chi"
 )
 
 func main() {

@@ -6,10 +6,11 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 )
 
 const (
-	checkErr = "Failed duriung rabbitmq health check"
+	checkErr = "Failed during RabbitMQ health check"
 )
 
 func TestHealthHandler(t *testing.T) {
@@ -28,6 +29,16 @@ func TestHealthHandler(t *testing.T) {
 	Register(Config{
 		Name:  "mongodb",
 		Check: func() error { return nil },
+	})
+
+	Register(Config{
+		Name:      "snail-service",
+		SkipOnErr: true,
+		Timeout:   time.Second * 1,
+		Check: func() error {
+			time.Sleep(time.Second * 2)
+			return nil
+		},
 	})
 
 	h := http.Handler(Handler())
@@ -57,6 +68,15 @@ func TestHealthHandler(t *testing.T) {
 	}
 
 	if f["rabbitmq"] != checkErr {
-		t.Errorf("body returned wrong status: got %s want %s", failure, checkErr)
+		t.Errorf("body returned wrong status for rabbitmq: got %s want %s", failure, checkErr)
+	}
+
+	if f["snail-service"] != failureTimeout {
+		t.Errorf("body returned wrong status for snail-service: got %s want %s", failure, failureTimeout)
+	}
+
+	Reset()
+	if len(checks) != 0 {
+		t.Errorf("checks lenght differes from zero: got %d", len(checks))
 	}
 }
