@@ -15,6 +15,8 @@ const (
 	statusOK                 = "OK"
 	statusPartiallyAvailable = "Partially Available"
 	statusUnavailable        = "Unavailable"
+
+	failureTimeout = "Timeout during health check"
 )
 
 // Config carries the parameters to run the check.
@@ -58,6 +60,14 @@ func Register(c Config) {
 	checks = append(checks, c)
 }
 
+// Reset unregisters all previously set check configs
+func Reset() {
+	mu.Lock()
+	defer mu.Unlock()
+
+	checks = []Config{}
+}
+
 // Handler returns an HTTP handler (http.HandlerFunc).
 func Handler() http.Handler {
 	return http.HandlerFunc(HandlerFunc)
@@ -79,7 +89,7 @@ func HandlerFunc(w http.ResponseWriter, r *http.Request) {
 		for {
 			select {
 			case <-time.After(c.Timeout):
-				failures[c.Name] = "Timeout during health check"
+				failures[c.Name] = failureTimeout
 				setStatus(&status, c.SkipOnErr)
 				break loop
 			case res := <-resChan:
