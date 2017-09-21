@@ -1,13 +1,12 @@
 package postgres
 
 import (
+	"database/sql"
 	"errors"
 	"fmt"
 	"strings"
 
-	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
-	log "github.com/sirupsen/logrus"
 )
 
 // Config is the PostgreSQL checker configuration settings container.
@@ -22,6 +21,9 @@ type Config struct {
 	// InsertColumnsFunc is the callback function that returns map[<column>]<value> for testing insert operation.
 	// Required.
 	InsertColumnsFunc func() map[string]interface{}
+	// LogFunc is the callback function for errors logging during check.
+	// If not set logging is skipped.
+	LogFunc func(err error, details string, extra ...interface{})
 }
 
 // New creates new PostgreSQL health check that verifies the following:
@@ -31,24 +33,33 @@ type Config struct {
 // - deleting inserted row
 func New(config Config) func() error {
 	return func() error {
-		db, err := sqlx.Connect("postgres", config.DSN)
+		if config.LogFunc == nil {
+			config.LogFunc = func(err error, details string, extra ...interface{}) {}
+		}
+
+		db, err := sql.Open("postgres", config.DSN)
 		if err != nil {
-			log.WithError(err).Error("PostgreSQL health check failed during connect")
+			config.LogFunc(err, "PostgreSQL health check failed during connect")
 			return err
 		}
 
 		defer func() {
 			if err = db.Close(); err != nil {
-				log.WithError(err).Error("PostgreSQL health check failed during connection closing")
+				config.LogFunc(err, "PostgreSQL health check failed during connection closing")
 			}
 		}()
 
 		columns := config.InsertColumnsFunc()
 		columnNames := []string{}
 		columnPlaceholders := []string{}
-		for column := range columns {
+		columnValues := []interface{}{}
+		i := 1
+		for column, value := range columns {
 			columnNames = append(columnNames, column)
-			columnPlaceholders = append(columnPlaceholders, ":"+column)
+			columnPlaceholders = append(columnPlaceholders, fmt.Sprintf("$%d", i))
+			columnValues = append(columnValues, value)
+
+			i++
 		}
 
 		insertQuery := fmt.Sprintf(
@@ -58,25 +69,11 @@ func New(config Config) func() error {
 			strings.Join(columnPlaceholders, ", "),
 			config.IDColumn,
 		)
-		insertRows, err := db.NamedQuery(insertQuery, columns)
-		if err != nil {
-			log.WithError(err).Error("PostgreSQL health check failed during insert")
-			return err
-		}
 
-		if !insertRows.Next() {
-			log.WithError(err).Error("PostgreSQL health check failed during checking insert result rows")
-			return errors.New("looks like insert result has 0 rows")
-		}
 		var idValue interface{}
-		err = insertRows.Scan(&idValue)
+		err = db.QueryRow(insertQuery, columnValues...).Scan(&idValue)
 		if err != nil {
-			log.WithError(err).Error("PostgreSQL health check failed during ID scanning")
-			return err
-		}
-		err = insertRows.Close()
-		if err != nil {
-			log.WithError(err).Error("PostgreSQL health check failed during closing ID result")
+			config.LogFunc(err, "PostgreSQL health check failed during insert and scan")
 			return err
 		}
 
@@ -88,16 +85,16 @@ func New(config Config) func() error {
 		)
 		selectRows, err := db.Query(selectQuery, idValue)
 		if err != nil {
-			log.WithError(err).Error("PostgreSQL health check failed during select")
+			config.LogFunc(err, "PostgreSQL health check failed during select")
 			return err
 		}
 		if !selectRows.Next() {
-			log.WithError(err).Error("PostgreSQL health check failed during checking select result rows")
+			config.LogFunc(err, "PostgreSQL health check failed during checking select result rows")
 			return errors.New("looks like select result has 0 rows")
 		}
 		err = selectRows.Close()
 		if err != nil {
-			log.WithError(err).Error("PostgreSQL health check failed during closing select result")
+			config.LogFunc(err, "PostgreSQL health check failed during closing select result")
 			return err
 		}
 
@@ -108,16 +105,16 @@ func New(config Config) func() error {
 		)
 		deleteResult, err := db.Exec(deleteQuery, idValue)
 		if err != nil {
-			log.WithError(err).Error("PostgreSQL health check failed during delete")
+			config.LogFunc(err, "PostgreSQL health check failed during delete")
 			return err
 		}
 		deleted, err := deleteResult.RowsAffected()
 		if err != nil {
-			log.WithError(err).Error("PostgreSQL health check failed during extracting delete result")
+			config.LogFunc(err, "PostgreSQL health check failed during extracting delete result")
 			return err
 		}
 		if deleted < 1 {
-			log.WithError(err).Error("PostgreSQL health check failed during checking delete result")
+			config.LogFunc(err, "PostgreSQL health check failed during checking delete result")
 			return errors.New("looks like delete removed 0 rows")
 		}
 

@@ -5,18 +5,30 @@ import (
 	"time"
 
 	"github.com/garyburd/redigo/redis"
-	log "github.com/sirupsen/logrus"
 )
+
+// Config is the Redis checker configuration settings container.
+type Config struct {
+	// DSN is the Redis instance connection DSN. Required.
+	DSN string
+	// LogFunc is the callback function for errors logging during check.
+	// If not set logging is skipped.
+	LogFunc func(err error, details string, extra ...interface{})
+}
 
 // New creates new Redis health check that verifies the following:
 // - connection establishing
 // - doing the PING command and verifying the response
-func New(dsn string) func() error {
+func New(config Config) func() error {
 	return func() error {
+		if config.LogFunc == nil {
+			config.LogFunc = func(err error, details string, extra ...interface{}) {}
+		}
+
 		pool := &redis.Pool{
 			MaxIdle:     1,
 			IdleTimeout: 10 * time.Second,
-			Dial:        func() (redis.Conn, error) { return redis.DialURL(dsn) },
+			Dial:        func() (redis.Conn, error) { return redis.DialURL(config.DSN) },
 		}
 
 		conn := pool.Get()
@@ -24,17 +36,17 @@ func New(dsn string) func() error {
 
 		data, err := conn.Do("PING")
 		if err != nil {
-			log.WithError(err).Error("Redis ping failed")
+			config.LogFunc(err, "Redis ping failed")
 			return err
 		}
 
 		if data == nil {
-			log.Error("Empty response for redis ping")
+			config.LogFunc(nil, "Empty response for redis ping")
 			return errors.New("empty response for redis ping")
 		}
 
 		if data != "PONG" {
-			log.WithField("data", data).Error("Unexpected response for redis ping")
+			config.LogFunc(nil, "Unexpected response for redis ping", data)
 			return errors.New("unexpected response for redis ping")
 		}
 

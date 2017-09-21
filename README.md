@@ -1,7 +1,7 @@
 # health-go
 
 * Exposes an HTTP handler that retrieves health status of the application
-* Implements som generic checkers for the following services:
+* Implements some generic checkers for the following services:
   * RabbitMQ
   * PostgreSQL
   * Redis
