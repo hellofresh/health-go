@@ -32,11 +32,11 @@ type Config struct {
 // - selecting inserted row
 // - deleting inserted row
 func New(config Config) func() error {
-	return func() error {
-		if config.LogFunc == nil {
-			config.LogFunc = func(err error, details string, extra ...interface{}) {}
-		}
+	if config.LogFunc == nil {
+		config.LogFunc = func(err error, details string, extra ...interface{}) {}
+	}
 
+	return func() error {
 		db, err := sql.Open("postgres", config.DSN)
 		if err != nil {
 			config.LogFunc(err, "PostgreSQL health check failed during connect")

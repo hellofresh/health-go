@@ -20,11 +20,11 @@ type Config struct {
 // - connection establishing
 // - doing the PING command and verifying the response
 func New(config Config) func() error {
-	return func() error {
-		if config.LogFunc == nil {
-			config.LogFunc = func(err error, details string, extra ...interface{}) {}
-		}
+	if config.LogFunc == nil {
+		config.LogFunc = func(err error, details string, extra ...interface{}) {}
+	}
 
+	return func() error {
 		pool := &redis.Pool{
 			MaxIdle:     1,
 			IdleTimeout: 10 * time.Second,
