@@ -5,6 +5,7 @@
   * RabbitMQ
   * PostgreSQL
   * Redis
+  * HTTP
 
 ## Usage
 
