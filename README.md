@@ -1,11 +1,18 @@
 # health-go
 
-* Exposes an HTTP handler that retrieves health status of the application.
+* Exposes an HTTP handler that retrieves health status of the application
+* Implements some generic checkers for the following services:
+  * RabbitMQ
+  * PostgreSQL
+  * Redis
+  * HTTP
 
-### Usage
+## Usage
+
 The library exports `Handler` and `HandlerFunc` functions which are fully compatible with `net/http`.
 
-#### Handler
+### Handler
+
 ```go
 package main
 
@@ -38,7 +45,7 @@ func main() {
 }
 ```
 
-#### HandlerFunc
+### HandlerFunc
 ```go
 package main
 
@@ -73,8 +80,10 @@ func main() {
 }
 ```
 
-### API Documentation
-#### `GET /status`
+## API Documentation
+
+### `GET /status`
+
 Get the health of the application.
 - Method: `GET`
 - Endpoint: `/status`
