@@ -24,15 +24,15 @@ type Config struct {
 // - getting response status from defined URL
 // - verifying that status code is less than 500
 func New(config Config) func() error {
+	if config.LogFunc == nil {
+		config.LogFunc = func(err error, details string, extra ...interface{}) {}
+	}
+
+	if config.RequestTimeout == 0 {
+		config.RequestTimeout = time.Second * 5
+	}
+
 	return func() error {
-		if config.LogFunc == nil {
-			config.LogFunc = func(err error, details string, extra ...interface{}) {}
-		}
-
-		if config.RequestTimeout == 0 {
-			config.RequestTimeout = time.Second * 5
-		}
-
 		req, err := http.NewRequest(http.MethodGet, config.URL, nil)
 		if err != nil {
 			config.LogFunc(err, "Creating the request for the health check failed")

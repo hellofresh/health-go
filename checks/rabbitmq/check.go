@@ -41,32 +41,31 @@ type Config struct {
 // - publishing a message to the exchange with the defined routing key
 // - consuming published message
 func New(config Config) func() error {
+	if config.LogFunc == nil {
+		config.LogFunc = func(err error, details string, extra ...interface{}) {}
+	}
+
+	if config.Exchange == "" {
+		config.Exchange = defaultExchange
+	}
+
+	if config.RoutingKey == "" {
+		host, err := os.Hostname()
+		if nil != err {
+			config.RoutingKey = "-unknown-"
+		}
+		config.RoutingKey = host
+	}
+
+	if config.Queue == "" {
+		config.Queue = fmt.Sprintf("%s.%s", config.Exchange, config.RoutingKey)
+	}
+
+	if config.ConsumeTimeout == 0 {
+		config.ConsumeTimeout = time.Second * 3
+	}
+
 	return func() error {
-		if config.LogFunc == nil {
-			config.LogFunc = func(err error, details string, extra ...interface{}) {}
-		}
-
-		if config.Exchange == "" {
-			config.Exchange = defaultExchange
-		}
-
-		if config.RoutingKey == "" {
-			host, err := os.Hostname()
-			if nil != err {
-				config.LogFunc(err, "RabbitMQ health check failed on settings default value for unset routing key")
-				return err
-			}
-			config.RoutingKey = host
-		}
-
-		if config.Queue == "" {
-			config.Queue = fmt.Sprintf("%s.%s", config.Exchange, config.RoutingKey)
-		}
-
-		if config.ConsumeTimeout == 0 {
-			config.ConsumeTimeout = time.Second * 3
-		}
-
 		conn, err := amqp.Dial(config.DSN)
 		if err != nil {
 			config.LogFunc(err, "RabbitMQ health check failed on dial phase")
