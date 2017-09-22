@@ -6,6 +6,7 @@
   * PostgreSQL
   * Redis
   * HTTP
+  * MongoDB
 
 ## Usage
 
