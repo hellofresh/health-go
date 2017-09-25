@@ -37,6 +37,7 @@ type Config struct {
 // - connection establishing
 // - getting channel from the connection
 // - declaring topic exchange
+// - declaring queue
 // - binding a queue to the exchange with the defined routing key
 // - publishing a message to the exchange with the defined routing key
 // - consuming published message
@@ -82,6 +83,11 @@ func New(config Config) func() error {
 
 		if err := ch.ExchangeDeclare(config.Exchange, "topic", true, false, false, false, nil); err != nil {
 			config.LogFunc(err, "RabbitMQ health check failed during declaring exchange")
+			return err
+		}
+
+		if _, err := ch.QueueDeclare(config.Queue, false, false, false, false, nil); err != nil {
+			config.LogFunc(err, "RabbitMQ health check failed during declaring queue")
 			return err
 		}
 

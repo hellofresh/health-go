@@ -15,7 +15,7 @@ func TestNew(t *testing.T) {
 
 	check := New(Config{
 		DSN:      os.Getenv(pgDSNEnv),
-		Table:    "client",
+		Table:    "test",
 		IDColumn: "id",
 		InsertColumnsFunc: func() map[string]interface{} {
 			return map[string]interface{}{
