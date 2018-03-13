@@ -102,10 +102,12 @@ func New(config Config) func() error {
 			return err
 		}
 
-		ok := make(chan bool, 1)
+		done := make(chan struct{}, 1)
+		defer close(done)
+
 		go func() {
 			for range messages {
-				ok <- true
+				done <- struct{}{}
 			}
 		}()
 
@@ -120,7 +122,7 @@ func New(config Config) func() error {
 			case <-time.After(config.ConsumeTimeout):
 				config.LogFunc(nil, "RabbitMQ health check failed due to consume timeout")
 				return fmt.Errorf("RabbitMQ health check failed due to consume timeout")
-			case <-ok:
+			case <-done:
 				return nil
 			}
 		}
