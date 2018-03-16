@@ -118,27 +118,27 @@ func New(config Config) func() error {
 }
 
 func (c Config) defaults() {
-	if config.LogFunc == nil {
-		config.LogFunc = func(err error, details string, extra ...interface{}) {}
+	if c.LogFunc == nil {
+		c.LogFunc = func(err error, details string, extra ...interface{}) {}
 	}
 
-	if config.Exchange == "" {
-		config.Exchange = defaultExchange
+	if c.Exchange == "" {
+		c.Exchange = defaultExchange
 	}
 
-	if config.RoutingKey == "" {
+	if c.RoutingKey == "" {
 		host, err := os.Hostname()
 		if nil != err {
-			config.RoutingKey = "-unknown-"
+			c.RoutingKey = "-unknown-"
 		}
-		config.RoutingKey = host
+		c.RoutingKey = host
 	}
 
-	if config.Queue == "" {
-		config.Queue = fmt.Sprintf("%s.%s", config.Exchange, config.RoutingKey)
+	if c.Queue == "" {
+		c.Queue = fmt.Sprintf("%s.%s", c.Exchange, c.RoutingKey)
 	}
 
-	if config.ConsumeTimeout == 0 {
-		config.ConsumeTimeout = time.Second * 3
+	if c.ConsumeTimeout == 0 {
+		c.ConsumeTimeout = time.Second * 3
 	}
 }
