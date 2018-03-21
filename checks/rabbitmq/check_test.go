@@ -22,7 +22,7 @@ func TestNew(t *testing.T) {
 }
 
 func TestConfig(t *testing.T) {
-	conf := Config{
+	conf := &Config{
 		DSN: os.Getenv(mqDSNEnv),
 	}
 

@@ -48,7 +48,7 @@ type (
 // - publishing a message to the exchange with the defined routing key
 // - consuming published message
 func New(config Config) func() error {
-	config.defaults()
+	(&config).defaults()
 
 	return func() error {
 		conn, err := amqp.Dial(config.DSN)
@@ -121,7 +121,7 @@ func New(config Config) func() error {
 	}
 }
 
-func (c Config) defaults() {
+func (c *Config) defaults() {
 	if c.LogFunc == nil {
 		c.LogFunc = func(err error, details string, extra ...interface{}) {}
 	}
