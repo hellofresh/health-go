@@ -12,6 +12,10 @@ const (
 	defaultExchange = "health_check"
 )
 
+var (
+	defaultConsumeTimeout = time.Second * 3
+)
+
 type (
 	// Config is the RabbitMQ checker configuration settings container.
 	Config struct {
@@ -44,7 +48,7 @@ type (
 // - publishing a message to the exchange with the defined routing key
 // - consuming published message
 func New(config Config) func() error {
-	config.defaults()
+	(&config).defaults()
 
 	return func() error {
 		conn, err := amqp.Dial(config.DSN)
@@ -117,7 +121,7 @@ func New(config Config) func() error {
 	}
 }
 
-func (c Config) defaults() {
+func (c *Config) defaults() {
 	if c.LogFunc == nil {
 		c.LogFunc = func(err error, details string, extra ...interface{}) {}
 	}
@@ -139,6 +143,6 @@ func (c Config) defaults() {
 	}
 
 	if c.ConsumeTimeout == 0 {
-		c.ConsumeTimeout = time.Second * 3
+		c.ConsumeTimeout = defaultConsumeTimeout
 	}
 }
