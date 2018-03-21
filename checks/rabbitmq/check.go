@@ -12,6 +12,10 @@ const (
 	defaultExchange = "health_check"
 )
 
+var (
+	defaultConsumeTimeout = time.Second * 3
+)
+
 type (
 	// Config is the RabbitMQ checker configuration settings container.
 	Config struct {
@@ -139,6 +143,6 @@ func (c Config) defaults() {
 	}
 
 	if c.ConsumeTimeout == 0 {
-		c.ConsumeTimeout = time.Second * 3
+		c.ConsumeTimeout = defaultConsumeTimeout
 	}
 }
