@@ -91,15 +91,24 @@ func HandlerFunc(w http.ResponseWriter, r *http.Request) {
 	defer mu.Unlock()
 
 	status := statusOK
+	total := len(checks)
 	failures := make(map[string]string)
-	resChan := make(chan checkResponse, len(checks))
-	defer close(resChan)
+	resChan := make(chan checkResponse, total)
+
+	var wg sync.WaitGroup
+	wg.Add(total)
+
+	go func() {
+		defer close(resChan)
+		wg.Wait()
+	}()
+
 	for _, c := range checks {
 		go func(c Config) {
-			resChan <- checkResponse{
-				name:      c.Name,
-				skipOnErr: c.SkipOnErr,
-				err:       c.Check(),
+			defer wg.Done()
+			select {
+			case resChan <- checkResponse{c.Name, c.SkipOnErr, c.Check()}:
+			default:
 			}
 		}(c)
 
