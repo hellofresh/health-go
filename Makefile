@@ -1,4 +1,12 @@
-all: lint test
+NO_COLOR=\033[0m
+OK_COLOR=\033[32;01m
+
+all: deps lint test
+
+deps:
+	@echo "$(OK_COLOR)==> Installing dependencies$(NO_COLOR)"
+	@go get -u github.com/golang/dep/cmd/dep
+	@dep ensure
 
 lint:
 	@go vet ./...
@@ -16,4 +24,4 @@ checks:
 		HEALTH_GO_MG_DSN="`docker-compose port mongo 27017`/" \
 		go test -v -cover ./...
 
-.PHONY: all test lint checks
+.PHONY: all deps test lint checks

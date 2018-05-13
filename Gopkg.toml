@@ -1,0 +1,23 @@
+[[constraint]]
+  name = "github.com/garyburd/redigo"
+  version = "1.6.0"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/lib/pq"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/streadway/amqp"
+
+[[constraint]]
+  name = "google.golang.org/grpc"
+  version = "1.12.0"
+
+[[constraint]]
+  branch = "v2"
+  name = "gopkg.in/mgo.v2"
+
+[prune]
+  go-tests = true
+  unused-packages = true

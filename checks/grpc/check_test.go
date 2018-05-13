@@ -1,17 +1,20 @@
 package grpc
 
 import (
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/health"
-	healthpb "google.golang.org/grpc/health/grpc_health_v1"
 	"log"
 	"net"
 	"os"
 	"testing"
+
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/health"
+	healthpb "google.golang.org/grpc/health/grpc_health_v1"
 )
 
-const addr = ":8080"
-const service = "HealthTest"
+const (
+	addr    = ":8080"
+	service = "HealthTest"
+)
 
 var healthServer *health.Server
 

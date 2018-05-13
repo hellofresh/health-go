@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+
 	"google.golang.org/grpc"
 	healthpb "google.golang.org/grpc/health/grpc_health_v1"
 )
@@ -21,7 +22,7 @@ type Config struct {
 }
 
 var (
-	errStatusUnhealthy = errors.New("health check response status is unhealthy")
+	errStatusUnhealthy = errors.New("remote service is not available at the moment")
 	defaultLogFunc     = func(err error, details string, extra ...interface{}) {}
 )
 
@@ -35,13 +36,13 @@ func New(config Config) func() error {
 		// Set up a connection to the gRPC server
 		conn, err := grpc.Dial(config.Target, config.DialOptions...)
 		if err != nil {
-			config.LogFunc(err, "GRPC health check failed during connect")
+			config.LogFunc(err, "gRPC health check failed during connect")
 			return err
 		}
 
 		defer func() {
 			if err = conn.Close(); err != nil {
-				config.LogFunc(err, "GRPC health check failed during connection closing")
+				config.LogFunc(err, "gRPC health check failed during connection closing")
 			}
 		}()
 
@@ -51,13 +52,13 @@ func New(config Config) func() error {
 			Service: config.Service,
 		})
 		if err != nil {
-			config.LogFunc(err, "GRPC health check failed")
+			config.LogFunc(err, "gRPC health check failed")
 			return err
 		}
 
 		if res.GetStatus() != healthpb.HealthCheckResponse_SERVING {
 			config.LogFunc(errStatusUnhealthy, fmt.Sprintf(
-				"GRPC health check response status %s is unhealthy",
+				"gRPC health check response status %s is unhealthy",
 				res.GetStatus(),
 			))
 			return errStatusUnhealthy
