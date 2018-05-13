@@ -24,7 +24,7 @@ func TestMain(m *testing.M) {
 
 	lis, err := net.Listen("tcp", addr)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("error setting up tcp listener: %v", err)
 	}
 
 	server := grpc.NewServer()
@@ -32,7 +32,7 @@ func TestMain(m *testing.M) {
 
 	go func() {
 		if err := server.Serve(lis); err != nil {
-			log.Fatal(err)
+			log.Fatalf("failed to serve: %v", err)
 		}
 	}()
 
@@ -53,7 +53,7 @@ func TestNew_WithServingStatusServing(t *testing.T) {
 	})
 
 	if err := check(); err != nil {
-		t.Fatalf("Expected no error, got: %v", err)
+		t.Fatalf("expected no error, got: %v", err)
 	}
 }
 
@@ -69,7 +69,7 @@ func TestNew_WithServingStatusUnknown(t *testing.T) {
 	})
 
 	if err := check(); err != errStatusUnhealthy {
-		t.Fatalf("Expected error: %v", errStatusUnhealthy)
+		t.Fatalf("expected error: %v", errStatusUnhealthy)
 	}
 }
 
@@ -85,6 +85,6 @@ func TestNew_WithServingStatusNotServing(t *testing.T) {
 	})
 
 	if err := check(); err != errStatusUnhealthy {
-		t.Fatalf("Expected error: %v", errStatusUnhealthy)
+		t.Fatalf("expected error: %v", errStatusUnhealthy)
 	}
 }
