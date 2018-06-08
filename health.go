@@ -2,6 +2,8 @@ package health
 
 import (
 	"encoding/json"
+	"errors"
+	"fmt"
 	"net/http"
 	"runtime"
 	"sync"
@@ -9,8 +11,8 @@ import (
 )
 
 var (
-	mu     sync.Mutex
-	checks []Config
+	mu       sync.Mutex
+	checkMap = make(map[string]Config)
 )
 
 const (
@@ -70,14 +72,25 @@ type (
 )
 
 // Register registers a check config to be performed.
-func Register(c Config) {
+func Register(c Config) error {
 	mu.Lock()
 	defer mu.Unlock()
 
 	if c.Timeout == 0 {
 		c.Timeout = time.Second * 2
 	}
-	checks = append(checks, c)
+
+	if c.Name == "" {
+		return errors.New("health check must have a name to be registered")
+	}
+
+	if _, ok := checkMap[c.Name]; ok {
+		return fmt.Errorf("health check %s is already registered", c.Name)
+	}
+
+	checkMap[c.Name] = c
+
+	return nil
 }
 
 // Handler returns an HTTP handler (http.HandlerFunc).
@@ -91,7 +104,7 @@ func HandlerFunc(w http.ResponseWriter, r *http.Request) {
 	defer mu.Unlock()
 
 	status := statusOK
-	total := len(checks)
+	total := len(checkMap)
 	failures := make(map[string]string)
 	resChan := make(chan checkResponse, total)
 
@@ -103,7 +116,7 @@ func HandlerFunc(w http.ResponseWriter, r *http.Request) {
 		wg.Wait()
 	}()
 
-	for _, c := range checks {
+	for _, c := range checkMap {
 		go func(c Config) {
 			defer wg.Done()
 			select {
@@ -151,7 +164,7 @@ func Reset() {
 	mu.Lock()
 	defer mu.Unlock()
 
-	checks = []Config{}
+	checkMap = make(map[string]Config)
 }
 
 func newCheck(status string, failures map[string]string) Check {

@@ -76,7 +76,7 @@ func TestHealthHandler(t *testing.T) {
 	}
 
 	Reset()
-	if len(checks) != 0 {
-		t.Errorf("checks lenght differes from zero: got %d", len(checks))
+	if len(checkMap) != 0 {
+		t.Errorf("checks lenght differes from zero: got %d", len(checkMap))
 	}
 }
