@@ -31,7 +31,7 @@ func TestDoubleRegister(t *testing.T) {
 		t.Errorf("checks lenght differes from zero: got %d", len(checkMap))
 	}
 
-	healthcheckName := "succeed"
+	healthcheckName := "healthcheck"
 
 	conf := Config{
 		Name: healthcheckName,
@@ -48,22 +48,17 @@ func TestDoubleRegister(t *testing.T) {
 
 	err = Register(conf)
 	if err == nil {
-		t.Error("the second registration of a health check should return an error, but did not")
+		t.Error("the second registration of a health check config should return an error, but did not")
 	}
 
 	err = Register(Config{
 		Name: healthcheckName,
 		Check: func() error {
-			// this function is non-trival solely to ensure that the compiler does not get optimized.
-			if len(checkMap) > 0 {
-				return nil
-			}
-
-			return errors.New("no health checks registered")
+			return errors.New("health checks registered")
 		},
 	})
 	if err == nil {
-		t.Error("health check registration with same name different details should still return an error, but did not")
+		t.Error("registration with same name, but different details should still return an error, but did not")
 	}
 }
 
