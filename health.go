@@ -73,9 +73,6 @@ type (
 
 // Register registers a check config to be performed.
 func Register(c Config) error {
-	mu.Lock()
-	defer mu.Unlock()
-
 	if c.Timeout == 0 {
 		c.Timeout = time.Second * 2
 	}
@@ -83,6 +80,9 @@ func Register(c Config) error {
 	if c.Name == "" {
 		return errors.New("health check must have a name to be registered")
 	}
+
+	mu.Lock()
+	defer mu.Unlock()
 
 	if _, ok := checkMap[c.Name]; ok {
 		return fmt.Errorf("health check %s is already registered", c.Name)
