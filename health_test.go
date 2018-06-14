@@ -13,7 +13,58 @@ const (
 	checkErr = "Failed during RabbitMQ health check"
 )
 
+func TestRegisterWithNoName(t *testing.T) {
+	err := Register(Config{
+		Name: "",
+		Check: func() error {
+			return nil
+		},
+	})
+	if err == nil {
+		t.Error("health check registration with empty name should return an error, but did not get one")
+	}
+}
+
+func TestDoubleRegister(t *testing.T) {
+	Reset()
+	if len(checkMap) != 0 {
+		t.Errorf("checks lenght differes from zero: got %d", len(checkMap))
+	}
+
+	healthcheckName := "healthcheck"
+
+	conf := Config{
+		Name: healthcheckName,
+		Check: func() error {
+			return nil
+		},
+	}
+
+	err := Register(conf)
+	if err != nil {
+		// If the first registration failed, then further testing makes no sense.
+		t.Fatal("the first registration of a health check should not return an error, but got: ", err)
+	}
+
+	err = Register(conf)
+	if err == nil {
+		t.Error("the second registration of a health check config should return an error, but did not")
+	}
+
+	err = Register(Config{
+		Name: healthcheckName,
+		Check: func() error {
+			return errors.New("health checks registered")
+		},
+	})
+	if err == nil {
+		t.Error("registration with same name, but different details should still return an error, but did not")
+	}
+}
+
 func TestHealthHandler(t *testing.T) {
+	Reset()
+
 	res := httptest.NewRecorder()
 	req, err := http.NewRequest("GET", "/status", nil)
 	if err != nil {
@@ -76,7 +127,7 @@ func TestHealthHandler(t *testing.T) {
 	}
 
 	Reset()
-	if len(checks) != 0 {
-		t.Errorf("checks lenght differes from zero: got %d", len(checks))
+	if len(checkMap) != 0 {
+		t.Errorf("checks lenght differes from zero: got %d", len(checkMap))
 	}
 }
