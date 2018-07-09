@@ -7,6 +7,7 @@
   * Redis
   * HTTP
   * MongoDB
+  * MySQL
 
 ## Usage
 
