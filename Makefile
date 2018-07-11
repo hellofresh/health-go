@@ -14,7 +14,7 @@ checks:
 		HEALTH_GO_MQ_DSN="amqp://guest:guest@`docker-compose port rabbit 5672`/" \
 		HEALTH_GO_RD_DSN="redis://`docker-compose port redis 6379`/" \
 		HEALTH_GO_MG_DSN="`docker-compose port mongo 27017`/" \
-		HEALTH_GO_MS_DSN="mysql://test:test@`docker-compose port mysql 3306`/test?charset=utf8" \
+		HEALTH_GO_MS_DSN="test:test@tcp(`docker-compose port mysql 3306`)/test?charset=utf8" \
 		go test -v -cover ./...
 
 .PHONY: all test lint checks

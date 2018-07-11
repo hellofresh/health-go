@@ -19,7 +19,6 @@ func TestNew(t *testing.T) {
 		IDColumn: "id",
 		InsertColumnsFunc: func() map[string]interface{} {
 			return map[string]interface{}{
-				"id":           nil,
 				"secret":       time.Now().Format(time.RFC3339Nano),
 				"extra":        time.Now().Format(time.RFC3339Nano),
 				"redirect_uri": "http://localhost",
