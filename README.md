@@ -7,6 +7,7 @@
   * Redis
   * HTTP
   * MongoDB
+  * MySQL
 
 ## Usage
 
@@ -22,6 +23,7 @@ import (
   "time"
 
   "github.com/hellofresh/health-go"
+  healthMysql "github.com/hellofresh/health-go/checks/mysql"
 )
 
 func main() {
@@ -38,6 +40,24 @@ func main() {
     Name: "mongodb",
     Check: func() error {
       // mongo_db health check implementation goes here
+    },
+  })
+  
+  health.Register(health.Config{
+    Name:      "mysql",
+    Timeout:   time.Second * 2,
+    SkipOnErr: false,
+    Check: healthMysql.New(healthMysql.Config{
+      DSN:               "test:test@tcp(0.0.0.0:31726)/test?charset=utf8",,
+      Table:             "health_check",
+      IDColumn:          "id",
+      InsertColumnsFunc: func() map[string]interface{} {
+        return map[string]interface{}{
+          "secret": time.Now().Unix(),
+          "extra": time.Now().Unix(), 
+          "redirect_uri": "http://localhost",
+        }
+      },
     },
   })
 
@@ -56,6 +76,7 @@ import (
 
   "github.com/go-chi/chi"
   "github.com/hellofresh/health-go"
+  healthMysql "github.com/hellofresh/health-go/checks/mysql"
 )
 
 func main() {
@@ -72,6 +93,24 @@ func main() {
     Name: "mongodb",
     Check: func() error {
       // mongo_db health check implementation goes here
+    },
+  })
+  
+  health.Register(health.Config{
+    Name:      "mysql",
+    Timeout:   time.Second * 2,
+    SkipOnErr: false,
+    Check: healthMysql.New(healthMysql.Config{
+      DSN:               "test:test@tcp(0.0.0.0:31726)/test?charset=utf8",
+      Table:             "health_check",
+      IDColumn:          "id",
+      InsertColumnsFunc: func() map[string]interface{} {
+        return map[string]interface{}{
+          "secret": time.Now().Unix(),
+          "extra": time.Now().Unix(),
+          "redirect_uri": "http://localhost",
+        }
+      },
     },
   })
 
