@@ -1,4 +1,5 @@
 # health-go
+[![Build Status](https://travis-ci.com/hellofresh/health-go.svg?branch=master)](https://travis-ci.com/hellofresh/health-go)
 
 * Exposes an HTTP handler that retrieves health status of the application
 * Implements some generic checkers for the following services:
