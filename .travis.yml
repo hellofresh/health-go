@@ -1,0 +1,23 @@
+language: go
+
+services:
+  - docker
+
+go:
+  - "1.x"
+  - "1.8"
+  - "1.9"
+  - "1.10"
+
+before_install:
+  - docker-compose up -d
+
+install:
+  - mkdir -p $GOPATH/bin
+  - make deps
+
+script:
+  - make all
+
+after_script:
+  - docker-compose down -v
