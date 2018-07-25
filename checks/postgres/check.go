@@ -16,6 +16,7 @@ type Config struct {
 // New creates new PostgreSQL health check that verifies the following:
 // - connection establishing
 // - doing the ping command
+// - selecting postgres version
 func New(config Config) func() error {
 	if config.LogFunc == nil {
 		config.LogFunc = func(err error, details string, extra ...interface{}) {}
