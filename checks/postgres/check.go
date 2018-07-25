@@ -40,6 +40,12 @@ func New(config Config) func() error {
 			return err
 		}
 
+		_, err = db.Query(`SELECT VERSION()`)
+		if err != nil {
+			config.LogFunc(err, "PostgreSQL health check failed during select")
+			return err
+		}
+
 		return nil
 	}
 }
