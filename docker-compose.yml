@@ -38,3 +38,8 @@ services:
       MYSQL_DATABASE: test
       MYSQL_USER: test
       MYSQL_PASSWORD: test
+
+  http:
+    image: pierreprinetti/apimock:latest
+    ports:
+      - "80"
