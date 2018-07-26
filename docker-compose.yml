@@ -16,7 +16,6 @@ services:
     image: rabbitmq:3.6-management-alpine
     ports:
       - "5672"
-      - "15672"
 
   redis:
     image: redis:3.2-alpine
