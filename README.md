@@ -32,9 +32,9 @@ func main() {
     Name: "rabbitmq",
     Timeout: time.Second*5,
     SkipOnErr: true,
-    Check: func() error {
-      // rabbitmq health check implementation goes here
-    },
+    Check: healthRabbit.New(healthRabbit.Config{
+      DSN: `http://guest:guest@0.0.0.0:32771/`,
+    }),
   })
 
   health.Register(health.Config{
@@ -49,7 +49,7 @@ func main() {
     Timeout:   time.Second * 2,
     SkipOnErr: false,
     Check: healthMysql.New(healthMysql.Config{
-      DSN:               "test:test@tcp(0.0.0.0:31726)/test?charset=utf8",
+      DSN: "test:test@tcp(0.0.0.0:31726)/test?charset=utf8",
     },
   })
 
@@ -76,9 +76,9 @@ func main() {
     Name: "rabbitmq",
     Timeout: time.Second*5,
     SkipOnErr: true,
-    Check: func() error {
-      // rabbitmq health check implementation goes here
-    },
+    Check: healthRabbit.New(healthRabbit.Config{
+      DSN: `http://guest:guest@0.0.0.0:32771/`,
+    }),
   })
 
   health.Register(health.Config{
@@ -103,7 +103,7 @@ func main() {
 }
 ```
 
-For more examples please check `_examples/server.go` file
+For more examples please check [here](https://github.com/hellofresh/health-go/blob/master/_examples/server.go)
 ## API Documentation
 
 ### `GET /status`
