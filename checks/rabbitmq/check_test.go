@@ -20,19 +20,3 @@ func TestNew(t *testing.T) {
 		t.Fatalf("RabbitMQ check failed: %s", err.Error())
 	}
 }
-
-func TestConfig(t *testing.T) {
-	conf := &Config{
-		DSN: os.Getenv(mqDSNEnv),
-	}
-
-	conf.defaults()
-
-	if conf.Exchange != defaultExchange {
-		t.Fatal("Invalid default conf exchange value")
-	}
-
-	if conf.ConsumeTimeout != defaultConsumeTimeout {
-		t.Fatal("Invalid default conf exchange value")
-	}
-}

@@ -9,20 +9,21 @@ import (
 	healthHttp "github.com/hellofresh/health-go/checks/http"
 	healthMySql "github.com/hellofresh/health-go/checks/mysql"
 	healthPg "github.com/hellofresh/health-go/checks/postgres"
+	healthRabbit "github.com/hellofresh/health-go/checks/rabbitmq"
 )
 
 func main() {
-	// custom health check example
+	// custom health check example (fail)
 	health.Register(health.Config{
-		Name:      "rabbitmq",
+		Name:      "some-custom-check-fail",
 		Timeout:   time.Second * 5,
 		SkipOnErr: true,
 		Check:     func() error { return errors.New("failed during rabbitmq health check") },
 	})
 
-	// custom health check example
+	// custom health check example (success)
 	health.Register(health.Config{
-		Name:  "mongodb",
+		Name:  "some-custom-check-success",
 		Check: func() error { return nil },
 	})
 
@@ -42,7 +43,7 @@ func main() {
 		Timeout:   time.Second * 5,
 		SkipOnErr: true,
 		Check: healthPg.New(healthPg.Config{
-			DSN: `postgres://test:test@postgres:5432/test?sslmode=disable`,
+			DSN: `postgres://test:test@0.0.0.0:32807/test?sslmode=disable`,
 		}),
 	})
 
@@ -52,7 +53,17 @@ func main() {
 		Timeout:   time.Second * 5,
 		SkipOnErr: true,
 		Check: healthMySql.New(healthMySql.Config{
-			DSN: `test:test@tcp(mysql:3306)/test?charset=utf8`,
+			DSN: `test:test@tcp(0.0.0.0:32802)/test?charset=utf8`,
+		}),
+	})
+
+	// rabbitmq health check example
+	health.Register(health.Config{
+		Name:      "rabbitmq-check",
+		Timeout:   time.Second * 5,
+		SkipOnErr: true,
+		Check: healthRabbit.New(healthRabbit.Config{
+			DSN: `http://guest:guest@0.0.0.0:32771/`,
 		}),
 	})
 
