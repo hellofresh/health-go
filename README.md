@@ -1,5 +1,7 @@
 # health-go
 [![Build Status](https://travis-ci.com/hellofresh/health-go.svg?branch=master)](https://travis-ci.com/hellofresh/health-go)
+[![Go Report Card](https://goreportcard.com/badge/github.com/hellofresh/health-go)](https://goreportcard.com/report/github.com/hellofresh/health-go)
+[![Go Doc](https://godoc.org/github.com/hellofresh/health-go?status.svg)](https://godoc.org/github.com/hellofresh/health-go)
 
 * Exposes an HTTP handler that retrieves health status of the application
 * Implements some generic checkers for the following services:
@@ -49,16 +51,7 @@ func main() {
     Timeout:   time.Second * 2,
     SkipOnErr: false,
     Check: healthMysql.New(healthMysql.Config{
-      DSN:               "test:test@tcp(0.0.0.0:31726)/test?charset=utf8",,
-      Table:             "health_check",
-      IDColumn:          "id",
-      InsertColumnsFunc: func() map[string]interface{} {
-        return map[string]interface{}{
-          "secret": time.Now().Unix(),
-          "extra": time.Now().Unix(), 
-          "redirect_uri": "http://localhost",
-        }
-      },
+      DSN: "test:test@tcp(0.0.0.0:31726)/test?charset=utf8",
     },
   })
 
@@ -87,7 +80,7 @@ func main() {
     SkipOnErr: true,
     Check: func() error {
       // rabbitmq health check implementation goes here
-    },
+    }),
   })
 
   health.Register(health.Config{
@@ -103,15 +96,6 @@ func main() {
     SkipOnErr: false,
     Check: healthMysql.New(healthMysql.Config{
       DSN:               "test:test@tcp(0.0.0.0:31726)/test?charset=utf8",
-      Table:             "health_check",
-      IDColumn:          "id",
-      InsertColumnsFunc: func() map[string]interface{} {
-        return map[string]interface{}{
-          "secret": time.Now().Unix(),
-          "extra": time.Now().Unix(),
-          "redirect_uri": "http://localhost",
-        }
-      },
     },
   })
 
@@ -121,6 +105,7 @@ func main() {
 }
 ```
 
+For more examples please check [here](https://github.com/hellofresh/health-go/blob/master/_examples/server.go)
 ## API Documentation
 
 ### `GET /status`
@@ -192,13 +177,6 @@ HTTP/1.1 503 Service Unavailable
 - Push to the branch (`git push origin my-new-feature`)
 - Create new Pull Request
 
-## Badges
-
-[![Build Status](https://travis-ci.org/hellofresh/health-go.svg?branch=master)](https://travis-ci.org/hellofresh/health-go)
-[![Go Report Card](https://goreportcard.com/badge/github.com/hellofresh/health-go)](https://goreportcard.com/report/github.com/hellofresh/health-go)
-[![Go Doc](https://godoc.org/github.com/hellofresh/health-go?status.svg)](https://godoc.org/github.com/hellofresh/health-go)
-
 ---
-
 > GitHub [@hellofresh](https://github.com/hellofresh) &nbsp;&middot;&nbsp;
 > Medium [@engineering.hellofresh](https://engineering.hellofresh.com)

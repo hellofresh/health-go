@@ -14,7 +14,6 @@ before_install:
 
 install:
   - mkdir -p $GOPATH/bin
-  - make deps
 
 script:
   - make all
