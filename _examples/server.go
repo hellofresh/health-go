@@ -9,7 +9,6 @@ import (
 	healthHttp "github.com/hellofresh/health-go/checks/http"
 	healthMySql "github.com/hellofresh/health-go/checks/mysql"
 	healthPg "github.com/hellofresh/health-go/checks/postgres"
-	healthRabbit "github.com/hellofresh/health-go/checks/rabbitmq"
 )
 
 func main() {
@@ -54,16 +53,6 @@ func main() {
 		SkipOnErr: true,
 		Check: healthMySql.New(healthMySql.Config{
 			DSN: `test:test@tcp(0.0.0.0:32802)/test?charset=utf8`,
-		}),
-	})
-
-	// rabbitmq health check example
-	health.Register(health.Config{
-		Name:      "rabbitmq-check",
-		Timeout:   time.Second * 5,
-		SkipOnErr: true,
-		Check: healthRabbit.New(healthRabbit.Config{
-			DSN: `http://guest:guest@0.0.0.0:32771/`,
 		}),
 	})
 

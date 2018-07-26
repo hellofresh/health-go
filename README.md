@@ -34,9 +34,9 @@ func main() {
     Name: "rabbitmq",
     Timeout: time.Second*5,
     SkipOnErr: true,
-    Check: healthRabbit.New(healthRabbit.Config{
-      DSN: `http://guest:guest@0.0.0.0:32771/`,
-    }),
+    Check: func() error {
+      // rabbitmq health check implementation goes here
+    },
   })
 
   health.Register(health.Config{
@@ -78,8 +78,8 @@ func main() {
     Name: "rabbitmq",
     Timeout: time.Second*5,
     SkipOnErr: true,
-    Check: healthRabbit.New(healthRabbit.Config{
-      DSN: `http://guest:guest@0.0.0.0:32771/`,
+    Check: func() error {
+      // rabbitmq health check implementation goes here
     }),
   })
 
