@@ -49,16 +49,7 @@ func main() {
     Timeout:   time.Second * 2,
     SkipOnErr: false,
     Check: healthMysql.New(healthMysql.Config{
-      DSN:               "test:test@tcp(0.0.0.0:31726)/test?charset=utf8",,
-      Table:             "health_check",
-      IDColumn:          "id",
-      InsertColumnsFunc: func() map[string]interface{} {
-        return map[string]interface{}{
-          "secret": time.Now().Unix(),
-          "extra": time.Now().Unix(), 
-          "redirect_uri": "http://localhost",
-        }
-      },
+      DSN:               "test:test@tcp(0.0.0.0:31726)/test?charset=utf8",
     },
   })
 
@@ -103,15 +94,6 @@ func main() {
     SkipOnErr: false,
     Check: healthMysql.New(healthMysql.Config{
       DSN:               "test:test@tcp(0.0.0.0:31726)/test?charset=utf8",
-      Table:             "health_check",
-      IDColumn:          "id",
-      InsertColumnsFunc: func() map[string]interface{} {
-        return map[string]interface{}{
-          "secret": time.Now().Unix(),
-          "extra": time.Now().Unix(),
-          "redirect_uri": "http://localhost",
-        }
-      },
     },
   })
 
@@ -121,6 +103,7 @@ func main() {
 }
 ```
 
+For more examples please check `_examples/server.go` file
 ## API Documentation
 
 ### `GET /status`
