@@ -17,7 +17,7 @@ func main() {
 		Name:      "some-custom-check-fail",
 		Timeout:   time.Second * 5,
 		SkipOnErr: true,
-		Check:     func() error { return errors.New("failed during rabbitmq health check") },
+		Check:     func() error { return errors.New("failed during custom health check") },
 	})
 
 	// custom health check example (success)
@@ -42,7 +42,7 @@ func main() {
 		Timeout:   time.Second * 5,
 		SkipOnErr: true,
 		Check: healthPg.New(healthPg.Config{
-			DSN: `postgres://test:test@0.0.0.0:32807/test?sslmode=disable`,
+			DSN: `postgres://test:test@0.0.0.0:32783/test?sslmode=disable`,
 		}),
 	})
 
@@ -52,7 +52,20 @@ func main() {
 		Timeout:   time.Second * 5,
 		SkipOnErr: true,
 		Check: healthMySql.New(healthMySql.Config{
-			DSN: `test:test@tcp(0.0.0.0:32802)/test?charset=utf8`,
+			DSN: `test:test@tcp(0.0.0.0:32778)/test?charset=utf8`,
+		}),
+	})
+
+	// rabbitmq aliveness test example.
+	// Use it if your app has access to RabbitMQ management API.
+	// This endpoint declares a test queue, then publishes and consumes a message. Intended for use by monitoring tools. If everything is working correctly, will return HTTP status 200.
+	// As the default virtual host is called "/", this will need to be encoded as "%2f".
+	health.Register(health.Config{
+		Name:      "rabbit-aliveness-check",
+		Timeout:   time.Second * 5,
+		SkipOnErr: true,
+		Check: healthHttp.New(healthHttp.Config{
+			URL: `http://guest:guest@0.0.0.0:32780/api/aliveness-test/%2f`,
 		}),
 	})
 
