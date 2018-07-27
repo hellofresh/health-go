@@ -1,9 +1,10 @@
 package rabbitmq
 
 import (
-	"github.com/hellofresh/health-go/checks/http"
 	"os"
 	"testing"
+
+	"github.com/hellofresh/health-go/checks/http"
 )
 
 const httpURLEnv = "HEALTH_GO_MQ_URL"
