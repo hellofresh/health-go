@@ -9,7 +9,7 @@ lint:
 
 deps:
 	@echo "$(OK_COLOR)==> Installing dependencies $(NO_COLOR)"
-	@go get -u gopkg.in/mgo.v2
+	@go get -u github.com/globalsign/mgo
 	@go get -u github.com/go-sql-driver/mysql
 	@go get -u github.com/lib/pq
 	@go get -u github.com/streadway/amqp

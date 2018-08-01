@@ -1,6 +1,6 @@
 package mongo
 
-import "gopkg.in/mgo.v2"
+import "github.com/globalsign/mgo"
 
 // Config is the MongoDB checker configuration settings container.
 type Config struct {
