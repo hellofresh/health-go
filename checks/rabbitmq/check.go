@@ -98,7 +98,7 @@ func New(config Config) func() error {
 
 		go func() {
 			// block until: a message is received, or message channel is closed (consume timeout)
-			<-message
+			<-messages
 
 			// release the channel resources, and unblock the receive on done below
 			close(done)
