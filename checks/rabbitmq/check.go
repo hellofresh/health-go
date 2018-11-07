@@ -94,12 +94,17 @@ func New(config Config) func() error {
 			return err
 		}
 
-		done := make(chan struct{}, 1)
-		defer close(done)
+		done := make(chan struct{})
 
 		go func() {
+			// block until: a message is received, or message channel is closed (consume timeout)
+			<-messages
+
+			// release the channel resources, and unblock the receive on done below
+			close(done)
+
+			// now drain any incidental remaining messages
 			for range messages {
-				done <- struct{}{}
 			}
 		}()
 
