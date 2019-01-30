@@ -14,7 +14,7 @@ install:
   - mkdir -p $GOPATH/bin
 
 script:
-  - make all
+  - env GO111MODULE=on make all
 
 after_script:
   - docker-compose down -v
