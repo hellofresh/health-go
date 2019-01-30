@@ -19,7 +19,7 @@ test:
 		HEALTH_GO_MQ_DSN="amqp://guest:guest@`docker-compose port rabbit 5672`/" \
 		HEALTH_GO_MQ_URL="http://guest:guest@`docker-compose port rabbit 15672`/" \
 		HEALTH_GO_RD_DSN="redis://`docker-compose port redis 6379`/" \
-		HEALTH_GO_MG_DSN="`docker-compose port mongo 27017`/" \
+		HEALTH_GO_MG_DSN="mongodb://`docker-compose port mongo 27017`/" \
 		HEALTH_GO_MS_DSN="test:test@tcp(`docker-compose port mysql 3306`)/test?charset=utf8" \
 		HEALTH_GO_HTTP_URL="http://`docker-compose port http 80`/status" \
 		go test -cover ./...
