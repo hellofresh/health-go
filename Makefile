@@ -9,11 +9,7 @@ lint:
 
 deps:
 	@echo "$(OK_COLOR)==> Installing dependencies $(NO_COLOR)"
-	@go get -u gopkg.in/mgo.v2
-	@go get -u github.com/go-sql-driver/mysql
-	@go get -u github.com/lib/pq
-	@go get -u github.com/streadway/amqp
-	@go get -u github.com/garyburd/redigo/redis
+	@go mod vendor
 
 test:
 	@echo "$(OK_COLOR)==> Running tests against container deps $(NO_COLOR)"
@@ -23,7 +19,7 @@ test:
 		HEALTH_GO_MQ_DSN="amqp://guest:guest@`docker-compose port rabbit 5672`/" \
 		HEALTH_GO_MQ_URL="http://guest:guest@`docker-compose port rabbit 15672`/" \
 		HEALTH_GO_RD_DSN="redis://`docker-compose port redis 6379`/" \
-		HEALTH_GO_MG_DSN="`docker-compose port mongo 27017`/" \
+		HEALTH_GO_MG_DSN="mongodb://`docker-compose port mongo 27017`/" \
 		HEALTH_GO_MS_DSN="test:test@tcp(`docker-compose port mysql 3306`)/test?charset=utf8" \
 		HEALTH_GO_HTTP_URL="http://`docker-compose port http 80`/status" \
 		go test -cover ./...
