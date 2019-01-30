@@ -1,6 +1,12 @@
 package mongo
 
-import "gopkg.in/mgo.v2"
+import (
+	"context"
+	"time"
+
+	"github.com/mongodb/mongo-go-driver/mongo"
+	"github.com/mongodb/mongo-go-driver/mongo/readpref"
+)
 
 // Config is the MongoDB checker configuration settings container.
 type Config struct {
@@ -20,14 +26,36 @@ func New(config Config) func() error {
 	}
 
 	return func() error {
-		session, err := mgo.Dial(config.DSN)
+		var ctx context.Context
+		var cancel context.CancelFunc
+
+		client, err := mongo.NewClient(config.DSN)
 		if err != nil {
-			config.LogFunc(err, "MongoDB health check failed during connect")
+			config.LogFunc(err, "MongoDB health check failed on client creation")
 			return err
 		}
-		defer session.Close()
 
-		err = session.Ping()
+		ctx, cancel = context.WithTimeout(context.Background(), 5*time.Second)
+		err = client.Connect(ctx)
+		cancel()
+
+		if err != nil {
+			config.LogFunc(err, "MongoDB health check failed on connect")
+			return err
+		}
+
+		defer func() {
+			ctx, cancel = context.WithTimeout(context.Background(), 5*time.Second)
+			if err := client.Disconnect(ctx); err != nil {
+				config.LogFunc(err, "MongoDB health check failed on closing connection")
+			}
+			cancel()
+		}()
+
+		ctx, cancel = context.WithTimeout(context.Background(), 5*time.Second)
+		err = client.Ping(ctx, readpref.Primary())
+		cancel()
+
 		if err != nil {
 			config.LogFunc(err, "MongoDB health check failed during ping")
 			return err

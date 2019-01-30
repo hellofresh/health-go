@@ -9,11 +9,7 @@ lint:
 
 deps:
 	@echo "$(OK_COLOR)==> Installing dependencies $(NO_COLOR)"
-	@go get -u gopkg.in/mgo.v2
-	@go get -u github.com/go-sql-driver/mysql
-	@go get -u github.com/lib/pq
-	@go get -u github.com/streadway/amqp
-	@go get -u github.com/garyburd/redigo/redis
+	@go mod vendor
 
 test:
 	@echo "$(OK_COLOR)==> Running tests against container deps $(NO_COLOR)"
