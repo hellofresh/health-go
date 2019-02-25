@@ -78,7 +78,7 @@ func New(config Config) func() error {
 			return err
 		}
 
-		if _, err := ch.QueueDeclare(config.Queue, false, false, false, false, nil); err != nil {
+		if _, err := ch.QueueDeclare(config.Queue, false, true, false, false, nil); err != nil {
 			config.LogFunc(err, "RabbitMQ health check failed during declaring queue")
 			return err
 		}
