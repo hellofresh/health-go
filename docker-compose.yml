@@ -43,4 +43,6 @@ services:
   http:
     image: pierreprinetti/apimock:latest
     ports:
-      - "80"
+      - "8080"
+    environment:
+      HOST: ":8080"

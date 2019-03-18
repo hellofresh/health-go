@@ -4,8 +4,9 @@ import (
 	"context"
 	"time"
 
-	"github.com/mongodb/mongo-go-driver/mongo"
-	"github.com/mongodb/mongo-go-driver/mongo/readpref"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/mongo/readpref"
 )
 
 // Config is the MongoDB checker configuration settings container.
@@ -29,7 +30,7 @@ func New(config Config) func() error {
 		var ctx context.Context
 		var cancel context.CancelFunc
 
-		client, err := mongo.NewClient(config.DSN)
+		client, err := mongo.NewClient(options.Client().ApplyURI(config.DSN))
 		if err != nil {
 			config.LogFunc(err, "MongoDB health check failed on client creation")
 			return err
