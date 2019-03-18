@@ -66,7 +66,7 @@ func TestHealthHandler(t *testing.T) {
 	Reset()
 
 	res := httptest.NewRecorder()
-	req, err := http.NewRequest("GET", "/status", nil)
+	req, err := http.NewRequest("GET", "http://localhost/status", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
