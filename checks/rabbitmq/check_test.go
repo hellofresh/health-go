@@ -3,6 +3,9 @@ package rabbitmq
 import (
 	"os"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 const mqDSNEnv = "HEALTH_GO_MQ_DSN"
@@ -16,9 +19,8 @@ func TestNew(t *testing.T) {
 		DSN: os.Getenv(mqDSNEnv),
 	})
 
-	if err := check(); err != nil {
-		t.Fatalf("RabbitMQ check failed: %s", err.Error())
-	}
+	err := check()
+	require.NoError(t, err)
 }
 
 func TestConfig(t *testing.T) {
@@ -28,11 +30,6 @@ func TestConfig(t *testing.T) {
 
 	conf.defaults()
 
-	if conf.Exchange != defaultExchange {
-		t.Fatal("Invalid default conf exchange value")
-	}
-
-	if conf.ConsumeTimeout != defaultConsumeTimeout {
-		t.Fatal("Invalid default conf exchange value")
-	}
+	assert.Equal(t, defaultExchange, conf.Exchange)
+	assert.Equal(t, defaultConsumeTimeout, conf.ConsumeTimeout)
 }

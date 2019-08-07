@@ -3,6 +3,8 @@ package redis
 import (
 	"os"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 const rdDSNEnv = "HEALTH_GO_RD_DSN"
@@ -16,7 +18,6 @@ func TestNew(t *testing.T) {
 		DSN: os.Getenv(rdDSNEnv),
 	})
 
-	if err := check(); err != nil {
-		t.Fatalf("Redis check failed: %s", err.Error())
-	}
+	err := check()
+	require.NoError(t, err)
 }

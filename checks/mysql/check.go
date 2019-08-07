@@ -3,7 +3,6 @@ package mysql
 import (
 	"database/sql"
 
-	// MySQL database driver
 	_ "github.com/go-sql-driver/mysql"
 )
 
@@ -45,7 +44,12 @@ func New(config Config) func() error {
 			return err
 		}
 
-		_, err = db.Query(`SELECT VERSION()`)
+		rows, err := db.Query(`SELECT VERSION()`)
+		defer func() {
+			if err = rows.Close(); err != nil {
+				config.LogFunc(err, "MySQL health check failed during rows closing")
+			}
+		}()
 		if err != nil {
 			config.LogFunc(err, "MySQL health check failed during select")
 			return err

@@ -3,6 +3,8 @@ package mongo
 import (
 	"os"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 const mgDSNEnv = "HEALTH_GO_MG_DSN"
@@ -16,7 +18,6 @@ func TestNew(t *testing.T) {
 		DSN: os.Getenv(mgDSNEnv),
 	})
 
-	if err := check(); err != nil {
-		t.Fatalf("MongoDB check failed: %s", err.Error())
-	}
+	err := check()
+	require.NoError(t, err)
 }
