@@ -43,15 +43,15 @@ func New(config Config) func() error {
 		}
 
 		rows, err := db.Query(`SELECT VERSION()`)
+		if err != nil {
+			config.LogFunc(err, "PostgreSQL health check failed during select")
+			return err
+		}
 		defer func() {
 			if err = rows.Close(); err != nil {
 				config.LogFunc(err, "PostgreSQL health check failed during rows closing")
 			}
 		}()
-		if err != nil {
-			config.LogFunc(err, "PostgreSQL health check failed during select")
-			return err
-		}
 
 		return nil
 	}
