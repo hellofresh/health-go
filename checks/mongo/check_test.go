@@ -1,6 +1,7 @@
 package mongo
 
 import (
+	"fmt"
 	"os"
 	"testing"
 
@@ -9,13 +10,20 @@ import (
 
 const mgDSNEnv = "HEALTH_GO_MG_DSN"
 
-func TestNew(t *testing.T) {
-	if os.Getenv(mgDSNEnv) == "" {
-		t.SkipNow()
+var mongoDSN string
+
+func TestMain(m *testing.M) {
+	var ok bool
+	if mongoDSN, ok = os.LookupEnv(mgDSNEnv); !ok {
+		panic(fmt.Errorf("required env variable missing: %s", mgDSNEnv))
 	}
 
+	os.Exit(m.Run())
+}
+
+func TestNew(t *testing.T) {
 	check := New(Config{
-		DSN: os.Getenv(mgDSNEnv),
+		DSN: mongoDSN,
 	})
 
 	err := check()

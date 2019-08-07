@@ -1,6 +1,7 @@
 package http
 
 import (
+	"fmt"
 	"os"
 	"testing"
 
@@ -9,13 +10,20 @@ import (
 
 const httpURLEnv = "HEALTH_GO_HTTP_URL"
 
-func TestNew(t *testing.T) {
-	if os.Getenv(httpURLEnv) == "" {
-		t.SkipNow()
+var httpURL string
+
+func TestMain(m *testing.M) {
+	var ok bool
+	if httpURL, ok = os.LookupEnv(httpURLEnv); !ok {
+		panic(fmt.Errorf("required env variable missing: %s", httpURLEnv))
 	}
 
+	os.Exit(m.Run())
+}
+
+func TestNew(t *testing.T) {
 	check := New(Config{
-		URL: os.Getenv(httpURLEnv),
+		URL: httpURL,
 	})
 
 	err := check()
