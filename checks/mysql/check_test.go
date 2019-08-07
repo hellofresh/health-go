@@ -2,7 +2,6 @@ package mysql
 
 import (
 	"database/sql"
-	"fmt"
 	"os"
 	"testing"
 	"time"
@@ -13,20 +12,18 @@ import (
 
 const mysqlDSNEnv = "HEALTH_GO_MS_DSN"
 
-var mysqlDSN string
-
-func TestMain(m *testing.M) {
-	var ok bool
-	if mysqlDSN, ok = os.LookupEnv(mysqlDSNEnv); !ok {
-		panic(fmt.Errorf("required env variable missing: %s", mysqlDSNEnv))
+func getDSN(t *testing.T) string {
+	if mysqlDSN, ok := os.LookupEnv(mysqlDSNEnv); ok {
+		return mysqlDSN
 	}
 
-	os.Exit(m.Run())
+	t.Fatalf("required env variable missing: %s", mysqlDSNEnv)
+	return ""
 }
 
 func TestNew(t *testing.T) {
 	check := New(Config{
-		DSN: mysqlDSN,
+		DSN: getDSN(t),
 	})
 
 	err := check()
@@ -34,6 +31,8 @@ func TestNew(t *testing.T) {
 }
 
 func TestEnsureConnectionIsClosed(t *testing.T) {
+	mysqlDSN := getDSN(t)
+
 	db, err := sql.Open("mysql", mysqlDSN)
 	require.NoError(t, err)
 

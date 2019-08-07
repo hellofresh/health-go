@@ -10,13 +10,18 @@ import (
 
 const httpURLEnv = "HEALTH_GO_MQ_URL"
 
-func TestAliveness(t *testing.T) {
-	if os.Getenv(httpURLEnv) == "" {
-		t.SkipNow()
+func getURL(t *testing.T) string {
+	if httpURL, ok := os.LookupEnv(httpURLEnv); ok {
+		return httpURL
 	}
 
+	t.Fatalf("required env variable missing: %s", httpURLEnv)
+	return ""
+}
+
+func TestAliveness(t *testing.T) {
 	check := http.New(http.Config{
-		URL: os.Getenv(httpURLEnv),
+		URL: getURL(t),
 	})
 
 	err := check()

@@ -1,7 +1,6 @@
 package rabbitmq
 
 import (
-	"fmt"
 	"os"
 	"testing"
 
@@ -11,20 +10,18 @@ import (
 
 const mqDSNEnv = "HEALTH_GO_MQ_DSN"
 
-var mqDSN string
-
-func TestMain(m *testing.M) {
-	var ok bool
-	if mqDSN, ok = os.LookupEnv(mqDSNEnv); !ok {
-		panic(fmt.Errorf("required env variable missing: %s", mqDSNEnv))
+func getDSN(t *testing.T) string {
+	if mqDSN, ok := os.LookupEnv(mqDSNEnv); ok {
+		return mqDSN
 	}
 
-	os.Exit(m.Run())
+	t.Fatalf("required env variable missing: %s", mqDSNEnv)
+	return ""
 }
 
 func TestNew(t *testing.T) {
 	check := New(Config{
-		DSN: mqDSN,
+		DSN: getDSN(t),
 	})
 
 	err := check()
@@ -33,7 +30,7 @@ func TestNew(t *testing.T) {
 
 func TestConfig(t *testing.T) {
 	conf := &Config{
-		DSN: mqDSN,
+		DSN: getDSN(t),
 	}
 
 	conf.defaults()

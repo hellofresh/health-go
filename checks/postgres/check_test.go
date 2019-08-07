@@ -2,7 +2,6 @@ package postgres
 
 import (
 	"database/sql"
-	"fmt"
 	"os"
 	"testing"
 	"time"
@@ -14,20 +13,18 @@ import (
 
 const pgDSNEnv = "HEALTH_GO_PG_DSN"
 
-var pgDSN string
-
-func TestMain(m *testing.M) {
-	var ok bool
-	if pgDSN, ok = os.LookupEnv(pgDSNEnv); !ok {
-		panic(fmt.Errorf("required env variable missing: %s", pgDSNEnv))
+func getDSN(t *testing.T) string {
+	if pgDSN, ok := os.LookupEnv(pgDSNEnv); ok {
+		return pgDSN
 	}
 
-	os.Exit(m.Run())
+	t.Fatalf("required env variable missing: %s", pgDSNEnv)
+	return ""
 }
 
 func TestNew(t *testing.T) {
 	check := New(Config{
-		DSN: pgDSN,
+		DSN: getDSN(t),
 	})
 
 	err := check()
@@ -35,6 +32,8 @@ func TestNew(t *testing.T) {
 }
 
 func TestEnsureConnectionIsClosed(t *testing.T) {
+	pgDSN := getDSN(t)
+
 	db, err := sql.Open("postgres", pgDSN)
 	require.NoError(t, err)
 

@@ -1,7 +1,6 @@
 package redis
 
 import (
-	"fmt"
 	"os"
 	"testing"
 
@@ -10,20 +9,18 @@ import (
 
 const rdDSNEnv = "HEALTH_GO_RD_DSN"
 
-var redisDSN string
-
-func TestMain(m *testing.M) {
-	var ok bool
-	if redisDSN, ok = os.LookupEnv(rdDSNEnv); !ok {
-		panic(fmt.Errorf("required env variable missing: %s", rdDSNEnv))
+func getDSN(t *testing.T) string {
+	if redisDSN, ok := os.LookupEnv(rdDSNEnv); ok {
+		return redisDSN
 	}
 
-	os.Exit(m.Run())
+	t.Fatalf("required env variable missing: %s", rdDSNEnv)
+	return ""
 }
 
 func TestNew(t *testing.T) {
 	check := New(Config{
-		DSN: redisDSN,
+		DSN: getDSN(t),
 	})
 
 	err := check()
