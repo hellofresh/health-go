@@ -3,20 +3,26 @@ package http
 import (
 	"os"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 const httpURLEnv = "HEALTH_GO_HTTP_URL"
 
-func TestNew(t *testing.T) {
-	if os.Getenv(httpURLEnv) == "" {
-		t.SkipNow()
+func getURL(t *testing.T) string {
+	if httpURL, ok := os.LookupEnv(httpURLEnv); ok {
+		return httpURL
 	}
 
+	t.Fatalf("required env variable missing: %s", httpURLEnv)
+	return ""
+}
+
+func TestNew(t *testing.T) {
 	check := New(Config{
-		URL: os.Getenv(httpURLEnv),
+		URL: getURL(t),
 	})
 
-	if err := check(); err != nil {
-		t.Fatalf("HTTP check failed: %s", err.Error())
-	}
+	err := check()
+	require.NoError(t, err)
 }
