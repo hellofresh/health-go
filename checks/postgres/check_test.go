@@ -49,7 +49,7 @@ func TestEnsureConnectionIsClosed(t *testing.T) {
 	require.NoError(t, err)
 
 	check := New(Config{
-		DSN: os.Getenv(pgDSNEnv),
+		DSN: pgDSN,
 	})
 
 	for i := 0; i < 10; i++ {
