@@ -1,8 +1,10 @@
 # health-go
-[![Build Status](https://travis-ci.com/hellofresh/health-go.svg?branch=master)](https://travis-ci.com/hellofresh/health-go)
-[![Go Report Card](https://goreportcard.com/badge/github.com/hellofresh/health-go)](https://goreportcard.com/report/github.com/hellofresh/health-go)
-[![Go Doc](https://godoc.org/github.com/hellofresh/health-go?status.svg)](https://godoc.org/github.com/hellofresh/health-go)
+[![Build Status](https://travis-ci.com/sensedia/health-go.svg?branch=master)](https://travis-ci.com/sensedia/health-go)
+[![Go Report Card](https://goreportcard.com/badge/github.com/sensedia/health-go)](https://goreportcard.com/report/github.com/sensedia/health-go)
+[![Go Doc](https://godoc.org/github.com/sensedia/health-go?status.svg)](https://godoc.org/github.com/sensedia/health-go)
 
+* Standalone Health Check
+* Customizable Health Check entry
 * Exposes an HTTP handler that retrieves health status of the application
 * Implements some generic checkers for the following services:
   * RabbitMQ
@@ -13,9 +15,87 @@
   * MySQL
 
 ## Usage
+The library exports `Execute` function to implements a custom health check entry; `HealthStandaloneMode` function execute the health check and exit the program with right status;
+ `Handler` and `HandlerFunc` functions which are fully compatible with `net/http`.
 
-The library exports `Handler` and `HandlerFunc` functions which are fully compatible with `net/http`.
+### Custom Health Check entry
 
+```go
+import(
+"fmt"
+"github.com/sensedia/health-go"
+
+)
+func main(){
+	//Custom func to handle a internal errors and log
+	ErrorLogFunc := func(err error, details string, extra ...interface{}) {
+		fmt.Println("Errors:\n", err, "\nDetails:\n", details)
+	}
+	//Custom func to print debug logs
+	DebugLogFunc := func(args ...interface{}) {
+		fmt.Println(args)
+	}
+	//Both func can be nil and is optional
+
+	h := health.New(true, ErrorLogFunc, DebugLogFunc)
+
+	// custom health check example (success)
+	h.Register(health.Config{
+		Name:  "some-custom-check-success",
+		Check: func() error { return nil },
+	})
+
+	c := customHealthCheckEntry(&h)
+	fmt.Println(c)
+}
+
+func customHealthCheckEntry(healthCheck *health.Health) health.Check{
+	//personalized logic
+	return healthCheck.ExecuteCheck()
+}
+```
+
+### Standalone
+This category of health check can be used when the service uses the Cloud Events Specification, where it is not allowed to create endpoints or create another server in the application. The standalone mode is run by Kubernetes' Liveness Probe, running the application itself with the health check flag and verifying the integrity of the service's external dependencies.
+```go
+package main
+
+import (
+	"errors"
+	"fmt"
+	"net/http"
+	"time"
+
+	"github.com/sensedia/health-go"
+)
+
+func main() {
+	//Custom func to handle a internal errors and log
+	ErrorLogFunc := func(err error, details string, extra ...interface{}) {
+		fmt.Println("Errors:\n", err, "\nDetails:\n", details)
+	}
+	//Custom func to print debug logs
+	DebugLogFunc := func(args ...interface{}) {
+		fmt.Println(args)
+	}
+	//Both func can be nil
+
+	healthCheck := health.New(true, ErrorLogFunc, DebugLogFunc)
+
+	// custom health check example (success)
+	healthCheck.Register(health.Config{
+		Name:  "some-custom-check-success",
+		Check: func() error { return nil },
+	})
+
+ 	//if the flag hc is true, health check will be executed and exit te program
+	healthCheck.HealthCheckStandaloneMode("hc")
+
+	http.Handle("/status", healthCheck.Handler())
+	http.ListenAndServe(":3000", nil)
+}
+
+```
 ### Handler
 
 ```go
@@ -25,8 +105,8 @@ import (
   "net/http"
   "time"
 
-  "github.com/hellofresh/health-go"
-  healthMysql "github.com/hellofresh/health-go/checks/mysql"
+  "github.com/sensedia/health-go"
+  healthMysql "github.com/sensedia/health-go/checks/mysql"
 )
 
 func main() {
@@ -69,8 +149,8 @@ import (
   "time"
 
   "github.com/go-chi/chi"
-  "github.com/hellofresh/health-go"
-  healthMysql "github.com/hellofresh/health-go/checks/mysql"
+  "github.com/sensedia/health-go"
+  healthMysql "github.com/sensedia/health-go/checks/mysql"
 )
 
 func main() {
@@ -105,7 +185,7 @@ func main() {
 }
 ```
 
-For more examples please check [here](https://github.com/hellofresh/health-go/blob/master/_examples/server.go)
+For more examples please check [here](https://github.com/sensedia/health-go/blob/master/_examples/server.go)
 ## API Documentation
 
 ### `GET /status`
@@ -177,6 +257,9 @@ HTTP/1.1 503 Service Unavailable
 - Push to the branch (`git push origin my-new-feature`)
 - Create new Pull Request
 
+### Note
+This project is a fork of hellofresh health-go, the original content is available in GitHub [@hellofresh](https://github.com/hellofresh) 
+
 ---
-> GitHub [@hellofresh](https://github.com/hellofresh) &nbsp;&middot;&nbsp;
-> Medium [@engineering.hellofresh](https://engineering.hellofresh.com)
+> GitHub [@sensedia](https://github.com/sensedia) &nbsp;&middot;&nbsp;
+

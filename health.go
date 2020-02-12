@@ -3,17 +3,45 @@ package health
 import (
 	"encoding/json"
 	"errors"
+	"flag"
 	"fmt"
 	"net/http"
+	"os"
 	"runtime"
 	"sync"
 	"time"
 )
 
-var (
+type Health struct {
 	mu       sync.Mutex
-	checkMap = make(map[string]Config)
-)
+	checkMap map[string]Config
+	//WithSysMetrics is the conditional to process system metrics
+	//If it true log and response system metrics
+	WithSysMetrics bool
+	// ErrorLogFunc is the callback function for errors logging during check.
+	// If not set logging is skipped.
+	ErrorLogFunc func(err error, details string, extra ...interface{})
+	// DebugLogFunc is the callback function for debug logging during check.
+	// If not set logging is skipped.
+	DebugLogFunc func(...interface{})
+}
+
+func New(WithSysMetrics bool, ErrorLogFunc func(err error, details string, extra ...interface{}), DebugLogFunc func(...interface{})) Health {
+	if ErrorLogFunc == nil {
+		ErrorLogFunc = func(err error, details string, extra ...interface{}) {}
+	}
+	if DebugLogFunc == nil {
+		DebugLogFunc = func(...interface{}) {}
+	}
+
+	return Health{
+		mu:             sync.Mutex{},
+		checkMap:       make(map[string]Config),
+		WithSysMetrics: WithSysMetrics,
+		ErrorLogFunc: ErrorLogFunc,
+		DebugLogFunc: DebugLogFunc,
+	}
+}
 
 const (
 	statusOK                 = "OK"
@@ -49,7 +77,6 @@ type (
 		// System holds information of the go process.
 		System `json:"system"`
 	}
-
 	// System runtime variables about the go process.
 	System struct {
 		// Version is the go version.
@@ -71,8 +98,19 @@ type (
 	}
 )
 
+// Register allot of checks
+func (h *Health) BulkRegister(c ...Config) (err error) {
+	for _, cf := range c {
+		err = h.Register(cf)
+		if err != nil {
+			return
+		}
+	}
+	return
+}
+
 // Register registers a check config to be performed.
-func Register(c Config) error {
+func (h *Health) Register(c Config) error {
 	if c.Timeout == 0 {
 		c.Timeout = time.Second * 2
 	}
@@ -81,30 +119,60 @@ func Register(c Config) error {
 		return errors.New("health check must have a name to be registered")
 	}
 
-	mu.Lock()
-	defer mu.Unlock()
+	h.mu.Lock()
+	defer h.mu.Unlock()
 
-	if _, ok := checkMap[c.Name]; ok {
+	if _, ok := h.checkMap[c.Name]; ok {
 		return fmt.Errorf("health check %s is already registered", c.Name)
 	}
 
-	checkMap[c.Name] = c
+	h.checkMap[c.Name] = c
 
 	return nil
 }
 
+//Execute a health check standalone if the flag chosen is true
+func (h *Health) HealthCheckStandaloneMode(flagName string) {
+	b := flag.Bool(flagName, false, "Flag used to ability the health check mode")
+	flag.Parse()
+	if *b {
+		h.ExecuteStandalone()
+	}
+}
+
 // Handler returns an HTTP handler (http.HandlerFunc).
-func Handler() http.Handler {
-	return http.HandlerFunc(HandlerFunc)
+func (h *Health) Handler() http.Handler {
+	return http.HandlerFunc(h.HandlerFunc)
 }
 
 // HandlerFunc is the HTTP handler function.
-func HandlerFunc(w http.ResponseWriter, r *http.Request) {
-	mu.Lock()
-	defer mu.Unlock()
+func (h *Health) HandlerFunc(w http.ResponseWriter, r *http.Request) {
+	h.DebugLogFunc("Handling health check func")
+	c := h.ExecuteCheck()
+	h.logCheck(c)
+	data, err := json.Marshal(c)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		h.ErrorLogFunc(err, "Error to parse health check result")
+		return
+	}
+
+	code := http.StatusOK
+	if c.Status == statusUnavailable {
+		code = http.StatusServiceUnavailable
+	}
+	w.WriteHeader(code)
+	_, _ = w.Write(data)
+}
+
+//Execute health check base on config map
+func (h *Health) ExecuteCheck() Check {
+	h.mu.Lock()
+	defer h.mu.Unlock()
 
 	status := statusOK
-	total := len(checkMap)
+	total := len(h.checkMap)
 	failures := make(map[string]string)
 	resChan := make(chan checkResponse, total)
 
@@ -116,8 +184,9 @@ func HandlerFunc(w http.ResponseWriter, r *http.Request) {
 		wg.Wait()
 	}()
 
-	for _, c := range checkMap {
+	for _, c := range h.checkMap {
 		go func(c Config) {
+			h.DebugLogFunc("Executing health check:", c.Name)
 			defer wg.Done()
 			select {
 			case resChan <- checkResponse{c.Name, c.SkipOnErr, c.Check()}:
@@ -142,38 +211,49 @@ func HandlerFunc(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	c := newCheck(status, failures)
-	data, err := json.Marshal(c)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+	c := h.newCheck(status, failures)
+	return c
+}
 
-	code := http.StatusOK
-	if status == statusUnavailable {
-		code = http.StatusServiceUnavailable
+//Execute health check in standalone which if it is not ok return code 1 to system
+func (h *Health) ExecuteStandalone() {
+	c := h.ExecuteCheck()
+	h.logCheck(c)
+	if c.Status == statusOK {
+		os.Exit(0)
 	}
-	w.WriteHeader(code)
-	w.Write(data)
+	os.Exit(1)
 }
 
 // Reset unregisters all previously set check configs
-func Reset() {
-	mu.Lock()
-	defer mu.Unlock()
+func (h *Health) Reset() {
+	h.mu.Lock()
+	h.DebugLogFunc("Reseting health check configs")
+	defer h.mu.Unlock()
 
-	checkMap = make(map[string]Config)
+	h.checkMap = make(map[string]Config)
 }
 
-func newCheck(status string, failures map[string]string) Check {
-	return Check{
+func (h *Health) logCheck(c Check) {
+	b, e := json.MarshalIndent(c, "", " ")
+	if e != nil {
+		h.ErrorLogFunc(e, "Error to parse Health Check Result")
+	}
+	h.DebugLogFunc("Health Check Result:\n", string(b))
+}
+
+func (h *Health) newCheck(status string, failures map[string]string) Check {
+	c := Check{
 		Status:    status,
 		Timestamp: time.Now(),
 		Failures:  failures,
-		System:    newSystemMetrics(),
 	}
+
+	if h.WithSysMetrics {
+		c.System = newSystemMetrics()
+	}
+
+	return c
 }
 
 func newSystemMetrics() System {
