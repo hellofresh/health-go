@@ -7,10 +7,13 @@ import (
 	"net/http/httptest"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 const (
-	checkErr = "Failed during RabbitMQ health check"
+	checkErr = "failed during RabbitMQ health check"
 )
 
 func TestRegisterWithNoName(t *testing.T) {
@@ -31,35 +34,28 @@ func TestDoubleRegister(t *testing.T) {
 		t.Errorf("checks lenght differes from zero: got %d", len(checkMap))
 	}
 
-	healthcheckName := "healthcheck"
+	healthCheckName := "health-check"
 
 	conf := Config{
-		Name: healthcheckName,
+		Name: healthCheckName,
 		Check: func() error {
 			return nil
 		},
 	}
 
 	err := Register(conf)
-	if err != nil {
-		// If the first registration failed, then further testing makes no sense.
-		t.Fatal("the first registration of a health check should not return an error, but got: ", err)
-	}
+	require.NoError(t, err, "the first registration of a health check should not return an error, but got one")
 
 	err = Register(conf)
-	if err == nil {
-		t.Error("the second registration of a health check config should return an error, but did not")
-	}
+	assert.Error(t, err, "the second registration of a health check config should return an error, but did not")
 
 	err = Register(Config{
-		Name: healthcheckName,
+		Name: healthCheckName,
 		Check: func() error {
 			return errors.New("health checks registered")
 		},
 	})
-	if err == nil {
-		t.Error("registration with same name, but different details should still return an error, but did not")
-	}
+	assert.Error(t, err, "registration with same name, but different details should still return an error, but did not")
 }
 
 func TestHealthHandler(t *testing.T) {
@@ -95,39 +91,23 @@ func TestHealthHandler(t *testing.T) {
 	h := http.Handler(Handler())
 	h.ServeHTTP(res, req)
 
-	if status := res.Code; status != http.StatusOK {
-		t.Errorf("status handler returned wrong status code: got %v want %v", status, http.StatusOK)
-	}
+	assert.Equal(t, http.StatusOK, res.Code, "status handler returned wrong status code")
 
 	body := make(map[string]interface{})
-	if err := json.NewDecoder(res.Body).Decode(&body); err != nil {
-		t.Fatal(err)
-	}
+	err = json.NewDecoder(res.Body).Decode(&body)
+	require.NoError(t, err)
 
-	if body["status"] != statusPartiallyAvailable {
-		t.Errorf("body returned wrong status: got %s want %s", body["status"], statusPartiallyAvailable)
-	}
+	assert.Equal(t, statusPartiallyAvailable, body["status"], "body returned wrong status")
 
 	failure, ok := body["failures"]
-	if !ok {
-		t.Errorf("body returned nil failures field")
-	}
+	assert.True(t, ok, "body returned nil failures field")
 
 	f, ok := failure.(map[string]interface{})
-	if !ok {
-		t.Errorf("body returned nil failures.rabbitmq field")
-	}
+	assert.True(t, ok, "body returned nil failures.rabbitmq field")
 
-	if f["rabbitmq"] != checkErr {
-		t.Errorf("body returned wrong status for rabbitmq: got %s want %s", failure, checkErr)
-	}
-
-	if f["snail-service"] != failureTimeout {
-		t.Errorf("body returned wrong status for snail-service: got %s want %s", failure, failureTimeout)
-	}
+	assert.Equal(t, checkErr, f["rabbitmq"], "body returned wrong status for rabbitmq")
+	assert.Equal(t, failureTimeout, f["snail-service"], "body returned wrong status for snail-service")
 
 	Reset()
-	if len(checkMap) != 0 {
-		t.Errorf("checks lenght differes from zero: got %d", len(checkMap))
-	}
+	assert.Len(t, checkMap, 0, "checks length diffres from zero")
 }
