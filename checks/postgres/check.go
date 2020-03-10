@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"database/sql"
+
 	_ "github.com/lib/pq"
 )
 
@@ -41,11 +42,16 @@ func New(config Config) func() error {
 			return err
 		}
 
-		_, err = db.Query(`SELECT VERSION()`)
+		rows, err := db.Query(`SELECT VERSION()`)
 		if err != nil {
 			config.LogFunc(err, "PostgreSQL health check failed during select")
 			return err
 		}
+		defer func() {
+			if err = rows.Close(); err != nil {
+				config.LogFunc(err, "PostgreSQL health check failed during rows closing")
+			}
+		}()
 
 		return nil
 	}

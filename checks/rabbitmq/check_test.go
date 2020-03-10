@@ -3,36 +3,38 @@ package rabbitmq
 import (
 	"os"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 const mqDSNEnv = "HEALTH_GO_MQ_DSN"
 
-func TestNew(t *testing.T) {
-	if os.Getenv(mqDSNEnv) == "" {
-		t.SkipNow()
+func getDSN(t *testing.T) string {
+	if mqDSN, ok := os.LookupEnv(mqDSNEnv); ok {
+		return mqDSN
 	}
 
+	t.Fatalf("required env variable missing: %s", mqDSNEnv)
+	return ""
+}
+
+func TestNew(t *testing.T) {
 	check := New(Config{
-		DSN: os.Getenv(mqDSNEnv),
+		DSN: getDSN(t),
 	})
 
-	if err := check(); err != nil {
-		t.Fatalf("RabbitMQ check failed: %s", err.Error())
-	}
+	err := check()
+	require.NoError(t, err)
 }
 
 func TestConfig(t *testing.T) {
 	conf := &Config{
-		DSN: os.Getenv(mqDSNEnv),
+		DSN: getDSN(t),
 	}
 
 	conf.defaults()
 
-	if conf.Exchange != defaultExchange {
-		t.Fatal("Invalid default conf exchange value")
-	}
-
-	if conf.ConsumeTimeout != defaultConsumeTimeout {
-		t.Fatal("Invalid default conf exchange value")
-	}
+	assert.Equal(t, defaultExchange, conf.Exchange)
+	assert.Equal(t, defaultConsumeTimeout, conf.ConsumeTimeout)
 }

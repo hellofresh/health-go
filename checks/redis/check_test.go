@@ -3,20 +3,26 @@ package redis
 import (
 	"os"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 const rdDSNEnv = "HEALTH_GO_RD_DSN"
 
-func TestNew(t *testing.T) {
-	if os.Getenv(rdDSNEnv) == "" {
-		t.SkipNow()
+func getDSN(t *testing.T) string {
+	if redisDSN, ok := os.LookupEnv(rdDSNEnv); ok {
+		return redisDSN
 	}
 
+	t.Fatalf("required env variable missing: %s", rdDSNEnv)
+	return ""
+}
+
+func TestNew(t *testing.T) {
 	check := New(Config{
-		DSN: os.Getenv(rdDSNEnv),
+		DSN: getDSN(t),
 	})
 
-	if err := check(); err != nil {
-		t.Fatalf("Redis check failed: %s", err.Error())
-	}
+	err := check()
+	require.NoError(t, err)
 }

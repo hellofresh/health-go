@@ -5,20 +5,25 @@ import (
 	"testing"
 
 	"github.com/hellofresh/health-go/checks/http"
+	"github.com/stretchr/testify/require"
 )
 
 const httpURLEnv = "HEALTH_GO_MQ_URL"
 
-func TestAliveness(t *testing.T) {
-	if os.Getenv(httpURLEnv) == "" {
-		t.SkipNow()
+func getURL(t *testing.T) string {
+	if httpURL, ok := os.LookupEnv(httpURLEnv); ok {
+		return httpURL
 	}
 
+	t.Fatalf("required env variable missing: %s", httpURLEnv)
+	return ""
+}
+
+func TestAliveness(t *testing.T) {
 	check := http.New(http.Config{
-		URL: os.Getenv(httpURLEnv),
+		URL: getURL(t),
 	})
 
-	if err := check(); err != nil {
-		t.Fatalf("HTTP check failed: %s", err.Error())
-	}
+	err := check()
+	require.NoError(t, err)
 }

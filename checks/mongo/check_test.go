@@ -3,20 +3,26 @@ package mongo
 import (
 	"os"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 const mgDSNEnv = "HEALTH_GO_MG_DSN"
 
-func TestNew(t *testing.T) {
-	if os.Getenv(mgDSNEnv) == "" {
-		t.SkipNow()
+func getDSN(t *testing.T) string {
+	if mongoDSN, ok := os.LookupEnv(mgDSNEnv); ok {
+		return mongoDSN
 	}
 
+	t.Fatalf("required env variable missing: %s", mgDSNEnv)
+	return ""
+}
+
+func TestNew(t *testing.T) {
 	check := New(Config{
-		DSN: os.Getenv(mgDSNEnv),
+		DSN: getDSN(t),
 	})
 
-	if err := check(); err != nil {
-		t.Fatalf("MongoDB check failed: %s", err.Error())
-	}
+	err := check()
+	require.NoError(t, err)
 }
