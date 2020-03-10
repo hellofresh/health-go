@@ -1,0 +1,25 @@
+# This is an auto-generated .comply.yaml metadata file to
+# setup a GitHub repo with the minimal required information.
+# You can update the commented attributes providing more
+# information about this repo
+#
+#
+# description: |
+#   Enter here a brief and useful information about this code base
+
+contact: platform-tribe@hellofresh.com
+known-name: health-go
+squad: engineering-experience
+tribe: platform
+concourse-team: platform.engineering-experience
+slack-channel: "#tribe-platform"
+# labels:
+# - label1
+# - label2
+# public_urls:
+# - http://my.url
+# private_urls:
+# - http://my.url
+docs:
+  - https://github.com/hellofresh/health-go
+dashboards: {}
