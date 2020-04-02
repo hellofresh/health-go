@@ -19,13 +19,59 @@ jobs:
     name: Test
     runs-on: ubuntu-latest
     container: golang:${{ matrix.go-version }}
+
+    services:
+      postgres:
+        image: postgres:9.6-alpine
+        ports:
+          - "5432"
+        volumes:
+          - ./docker/postgres/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
+        environment:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: test
+        # needed because the postgres container does not provide a healthcheck
+        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
+
+      rabbit:
+        image: rabbitmq:3.6-management-alpine
+        ports:
+          - "5672"
+
+      redis:
+        image: redis:3.2-alpine
+        ports:
+          - "6379"
+
+      mongo:
+        image: mongo:3
+        ports:
+          - "27017"
+
+      mysql:
+        image: mysql:5.7
+        ports:
+          - "3306"
+        volumes:
+          - ./docker/mysql/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
+        environment:
+          MYSQL_ROOT_PASSWORD: test
+          MYSQL_DATABASE: test
+          MYSQL_USER: test
+          MYSQL_PASSWORD: test
+
+      http:
+        image: pierreprinetti/apimock:latest
+        ports:
+          - "8080"
+        environment:
+          HOST: ":8080"
+
     steps:
 
       - name: Check out code into the Go module directory
         uses: actions/checkout@v2
-
-      - name: Spin up tests docker deps
-        run: docker-compose up -d
 
       - name: Install dependencies
         run: make deps

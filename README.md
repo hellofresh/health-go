@@ -1,6 +1,7 @@
 # health-go
 [![Go Report Card](https://goreportcard.com/badge/github.com/hellofresh/health-go)](https://goreportcard.com/report/github.com/hellofresh/health-go)
 [![Go Doc](https://godoc.org/github.com/hellofresh/health-go?status.svg)](https://godoc.org/github.com/hellofresh/health-go)
+[![Coverage Status](https://codecov.io/gh/hellofresh/health-go/branch/master/graph/badge.svg)](https://codecov.io/gh/hellofresh/health-go)
 
 * Exposes an HTTP handler that retrieves health status of the application
 * Implements some generic checkers for the following services:
