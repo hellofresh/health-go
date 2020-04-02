@@ -27,7 +27,7 @@ jobs:
           - "5432"
         volumes:
           - ./docker/postgres/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
-        environment:
+        env:
           POSTGRES_USER: test
           POSTGRES_PASSWORD: test
           POSTGRES_DB: test
@@ -55,7 +55,7 @@ jobs:
           - "3306"
         volumes:
           - ./docker/mysql/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
-        environment:
+        env:
           MYSQL_ROOT_PASSWORD: test
           MYSQL_DATABASE: test
           MYSQL_USER: test
@@ -65,7 +65,7 @@ jobs:
         image: pierreprinetti/apimock:latest
         ports:
           - "8080"
-        environment:
+        env:
           HOST: ":8080"
 
     steps:
