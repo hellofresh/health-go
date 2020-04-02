@@ -2,7 +2,7 @@ version: '3'
 services:
 
   postgres:
-    image: postgres:9.5-alpine
+    image: postgres:9.6-alpine
     ports:
       - "5432"
     volumes:

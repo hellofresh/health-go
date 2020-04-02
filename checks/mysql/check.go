@@ -3,7 +3,7 @@ package mysql
 import (
 	"database/sql"
 
-	_ "github.com/go-sql-driver/mysql"
+	_ "github.com/go-sql-driver/mysql" // import mysql driver
 )
 
 // Config is the MySQL checker configuration settings container.
