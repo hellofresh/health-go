@@ -8,7 +8,9 @@ deps:
 	@go install -i golang.org/x/lint/golint
 	@go mod vendor
 
-test: lint format vet
+code-quality: lint format vet
+
+test: code-quality
 	@echo "$(OK_COLOR)==> Running tests against container deps $(NO_COLOR)"
 	@docker-compose up -d
 	@sleep 3 && \
@@ -19,7 +21,7 @@ test: lint format vet
 		HEALTH_GO_MG_DSN="mongodb://`docker-compose port mongo 27017`/" \
 		HEALTH_GO_MS_DSN="test:test@tcp(`docker-compose port mysql 3306`)/test?charset=utf8" \
 		HEALTH_GO_HTTP_URL="http://`docker-compose port http 8080`/status" \
-		go test -cover ./...
+		go test -cover ./... -coverprofile=coverage.txt -covermode=atomic
 
 lint:
 	@echo "$(OK_COLOR)==> Checking code style with 'golint' tool$(NO_COLOR)"
@@ -33,4 +35,4 @@ vet:
 	@echo "$(OK_COLOR)==> Checking code correctness with 'go vet' tool$(NO_COLOR)"
 	@go vet ./...
 
-.PHONY: all deps test lint format vet
+.PHONY: all deps test code-quality lint format vet
