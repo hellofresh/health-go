@@ -1,0 +1,42 @@
+name: Main
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+  release:
+    types:
+      - created
+
+jobs:
+
+  build:
+    strategy:
+      matrix:
+        go-version: [1.13, 1.14, latest]
+
+    name: Test
+    runs-on: ubuntu-latest
+    container: golang:${{ matrix.go-version }}
+    steps:
+
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v2
+
+      - name: Spin up tests docker deps
+        run: docker-compose up -d
+
+      - name: Install dependencies
+        run: make deps
+
+      - name: Run tests
+        if: success()
+        run: make test
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v1
+        if: success() && matrix.go-version == 'latest'
+        with:
+          file: ./coverage.txt
+          fail_ci_if_error: false
