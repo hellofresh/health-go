@@ -5,8 +5,6 @@ services:
     image: postgres:9.6-alpine
     ports:
       - "5432"
-    volumes:
-      - ./docker/postgres/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
     environment:
       POSTGRES_USER: test
       POSTGRES_PASSWORD: test
@@ -32,8 +30,6 @@ services:
     image: mysql:5.7
     ports:
       - "3306"
-    volumes:
-      - ./docker/mysql/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
     environment:
       MYSQL_ROOT_PASSWORD: test
       MYSQL_DATABASE: test
