@@ -2,10 +2,13 @@ package http
 
 import (
 	"context"
-	"errors"
 	"net/http"
 	"time"
+
+	wErrors "github.com/pkg/errors"
 )
+
+const defaultRequestTimeout = 5 * time.Second
 
 // Config is the HTTP checker configuration settings container.
 type Config struct {
@@ -14,9 +17,6 @@ type Config struct {
 	// RequestTimeout is the duration that health check will try to consume published test message.
 	// If not set - 5 seconds
 	RequestTimeout time.Duration
-	// LogFunc is the callback function for errors logging during check.
-	// If not set logging is skipped.
-	LogFunc func(err error, details string, extra ...interface{})
 }
 
 // New creates new HTTP service health check that verifies the following:
@@ -24,19 +24,14 @@ type Config struct {
 // - getting response status from defined URL
 // - verifying that status code is less than 500
 func New(config Config) func() error {
-	if config.LogFunc == nil {
-		config.LogFunc = func(err error, details string, extra ...interface{}) {}
-	}
-
 	if config.RequestTimeout == 0 {
-		config.RequestTimeout = time.Second * 5
+		config.RequestTimeout = defaultRequestTimeout
 	}
 
 	return func() error {
 		req, err := http.NewRequest(http.MethodGet, config.URL, nil)
 		if err != nil {
-			config.LogFunc(err, "Creating the request for the health check failed")
-			return err
+			return wErrors.Wrap(err, "creating the request for the health check failed")
 		}
 
 		ctx, cancel := context.WithCancel(context.TODO())
@@ -51,13 +46,12 @@ func New(config Config) func() error {
 
 		res, err := http.DefaultClient.Do(req)
 		if err != nil {
-			config.LogFunc(err, "Making the request for the health check failed")
-			return err
+			return wErrors.Wrap(err, "making the request for the health check failed")
 		}
 		defer res.Body.Close()
 
 		if res.StatusCode >= http.StatusInternalServerError {
-			return errors.New("remote service is not available at the moment")
+			return wErrors.New("remote service is not available at the moment")
 		}
 
 		return nil

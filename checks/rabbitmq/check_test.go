@@ -10,15 +10,6 @@ import (
 
 const mqDSNEnv = "HEALTH_GO_MQ_DSN"
 
-func getDSN(t *testing.T) string {
-	if mqDSN, ok := os.LookupEnv(mqDSNEnv); ok {
-		return mqDSN
-	}
-
-	t.Fatalf("required env variable missing: %s", mqDSNEnv)
-	return ""
-}
-
 func TestNew(t *testing.T) {
 	check := New(Config{
 		DSN: getDSN(t),
@@ -37,4 +28,13 @@ func TestConfig(t *testing.T) {
 
 	assert.Equal(t, defaultExchange, conf.Exchange)
 	assert.Equal(t, defaultConsumeTimeout, conf.ConsumeTimeout)
+}
+
+func getDSN(t *testing.T) string {
+	t.Helper()
+
+	mqDSN, ok := os.LookupEnv(mqDSNEnv)
+	require.True(t, ok)
+
+	return mqDSN
 }

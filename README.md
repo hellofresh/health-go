@@ -25,8 +25,8 @@ import (
   "net/http"
   "time"
 
-  "github.com/hellofresh/health-go"
-  healthMysql "github.com/hellofresh/health-go/checks/mysql"
+  "github.com/hellofresh/health-go/v3"
+  healthMysql "github.com/hellofresh/health-go/v3/checks/mysql"
 )
 
 func main() {
@@ -69,8 +69,8 @@ import (
   "time"
 
   "github.com/go-chi/chi"
-  "github.com/hellofresh/health-go"
-  healthMysql "github.com/hellofresh/health-go/checks/mysql"
+  "github.com/hellofresh/health-go/v3"
+  healthMysql "github.com/hellofresh/health-go/v3/checks/mysql"
 )
 
 func main() {

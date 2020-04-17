@@ -5,10 +5,10 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/hellofresh/health-go"
-	healthHttp "github.com/hellofresh/health-go/checks/http"
-	healthMySql "github.com/hellofresh/health-go/checks/mysql"
-	healthPg "github.com/hellofresh/health-go/checks/postgres"
+	"github.com/hellofresh/health-go/v3"
+	healthHttp "github.com/hellofresh/health-go/v3/checks/http"
+	healthMySql "github.com/hellofresh/health-go/v3/checks/mysql"
+	healthPg "github.com/hellofresh/health-go/v3/checks/postgres"
 )
 
 func main() {

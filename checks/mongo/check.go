@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	wErrors "github.com/pkg/errors"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
@@ -19,9 +20,6 @@ const (
 type Config struct {
 	// DSN is the MongoDB instance connection DSN. Required.
 	DSN string
-	// LogFunc is the callback function for errors logging during check.
-	// If not set logging is skipped.
-	LogFunc func(err error, details string, extra ...interface{})
 
 	// TimeoutConnect defines timeout for establishing mongo connection, if not set - default value is used
 	TimeoutConnect time.Duration
@@ -35,10 +33,6 @@ type Config struct {
 // - connection establishing
 // - doing the ping command
 func New(config Config) func() error {
-	if config.LogFunc == nil {
-		config.LogFunc = func(err error, details string, extra ...interface{}) {}
-	}
-
 	if config.TimeoutConnect == 0 {
 		config.TimeoutConnect = defaultTimeoutConnect
 	}
@@ -51,42 +45,44 @@ func New(config Config) func() error {
 		config.TimeoutPing = defaultTimeoutPing
 	}
 
-	return func() error {
+	return func() (checkErr error) {
 		var ctx context.Context
 		var cancel context.CancelFunc
 
 		client, err := mongo.NewClient(options.Client().ApplyURI(config.DSN))
 		if err != nil {
-			config.LogFunc(err, "MongoDB health check failed on client creation")
-			return err
+			checkErr = wErrors.Wrap(err, "mongoDB health check failed on client creation")
+			return
 		}
 
 		ctx, cancel = context.WithTimeout(context.Background(), config.TimeoutConnect)
 		defer cancel()
-		err = client.Connect(ctx)
 
+		err = client.Connect(ctx)
 		if err != nil {
-			config.LogFunc(err, "MongoDB health check failed on connect")
-			return err
+			checkErr = wErrors.Wrap(err, "mongoDB health check failed on connect")
+			return
 		}
 
 		defer func() {
 			ctx, cancel = context.WithTimeout(context.Background(), config.TimeoutDisconnect)
 			defer cancel()
-			if err := client.Disconnect(ctx); err != nil {
-				config.LogFunc(err, "MongoDB health check failed on closing connection")
+
+			// override checkErr only if there were no other errors
+			if err := client.Disconnect(ctx); err != nil && checkErr == nil {
+				checkErr = wErrors.Wrap(err, "mongoDB health check failed on closing connection")
 			}
 		}()
 
 		ctx, cancel = context.WithTimeout(context.Background(), config.TimeoutPing)
 		defer cancel()
-		err = client.Ping(ctx, readpref.Primary())
 
+		err = client.Ping(ctx, readpref.Primary())
 		if err != nil {
-			config.LogFunc(err, "MongoDB health check failed during ping")
-			return err
+			checkErr = wErrors.Wrap(err, "mongoDB health check failed on ping")
+			return
 		}
 
-		return nil
+		return
 	}
 }
