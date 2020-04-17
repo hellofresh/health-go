@@ -3,25 +3,20 @@ package mysql
 import (
 	"database/sql"
 	"os"
+	"sync"
 	"testing"
 	"time"
 
+	_ "github.com/go-sql-driver/mysql"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 const mysqlDSNEnv = "HEALTH_GO_MS_DSN"
 
-func getDSN(t *testing.T) string {
-	if mysqlDSN, ok := os.LookupEnv(mysqlDSNEnv); ok {
-		return mysqlDSN
-	}
-
-	t.Fatalf("required env variable missing: %s", mysqlDSNEnv)
-	return ""
-}
-
 func TestNew(t *testing.T) {
+	initDB(t)
+
 	check := New(Config{
 		DSN: getDSN(t),
 	})
@@ -31,6 +26,8 @@ func TestNew(t *testing.T) {
 }
 
 func TestEnsureConnectionIsClosed(t *testing.T) {
+	initDB(t)
+
 	mysqlDSN := getDSN(t)
 
 	db, err := sql.Open("mysql", mysqlDSN)
@@ -65,4 +62,39 @@ func TestEnsureConnectionIsClosed(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.Equal(t, initialConnections, currentConnections)
+}
+
+func getDSN(t *testing.T) string {
+	t.Helper()
+
+	mysqlDSN, ok := os.LookupEnv(mysqlDSNEnv)
+	require.True(t, ok)
+
+	return mysqlDSN
+}
+
+var dbInit sync.Once
+
+func initDB(t *testing.T) {
+	t.Helper()
+
+	dbInit.Do(func() {
+		db, err := sql.Open("mysql", getDSN(t))
+		require.NoError(t, err)
+
+		defer func() {
+			err := db.Close()
+			assert.NoError(t, err)
+		}()
+
+		_, err = db.Exec(`
+CREATE TABLE IF NOT EXISTS test (
+  id           INT NOT NULL AUTO_INCREMENT PRIMARY KEY ,
+  secret       VARCHAR(256) NOT NULL,
+  extra        VARCHAR(256) NOT NULL,
+  redirect_uri VARCHAR(256) NOT NULL
+);
+`)
+		require.NoError(t, err)
+	})
 }

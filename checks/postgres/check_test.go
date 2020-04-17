@@ -3,6 +3,7 @@ package postgres
 import (
 	"database/sql"
 	"os"
+	"sync"
 	"testing"
 	"time"
 
@@ -13,16 +14,9 @@ import (
 
 const pgDSNEnv = "HEALTH_GO_PG_DSN"
 
-func getDSN(t *testing.T) string {
-	if pgDSN, ok := os.LookupEnv(pgDSNEnv); ok {
-		return pgDSN
-	}
-
-	t.Fatalf("required env variable missing: %s", pgDSNEnv)
-	return ""
-}
-
 func TestNew(t *testing.T) {
+	initDB(t)
+
 	check := New(Config{
 		DSN: getDSN(t),
 	})
@@ -32,6 +26,8 @@ func TestNew(t *testing.T) {
 }
 
 func TestEnsureConnectionIsClosed(t *testing.T) {
+	initDB(t)
+
 	pgDSN := getDSN(t)
 
 	db, err := sql.Open("postgres", pgDSN)
@@ -63,4 +59,39 @@ func TestEnsureConnectionIsClosed(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.Equal(t, initialConnections, currentConnections)
+}
+
+func getDSN(t *testing.T) string {
+	t.Helper()
+
+	pgDSN, ok := os.LookupEnv(pgDSNEnv)
+	require.True(t, ok)
+
+	return pgDSN
+}
+
+var dbInit sync.Once
+
+func initDB(t *testing.T) {
+	t.Helper()
+
+	dbInit.Do(func() {
+		db, err := sql.Open("postgres", getDSN(t))
+		require.NoError(t, err)
+
+		defer func() {
+			err := db.Close()
+			assert.NoError(t, err)
+		}()
+
+		_, err = db.Exec(`
+CREATE TABLE IF NOT EXISTS test (
+  id           TEXT NOT NULL PRIMARY KEY,
+  secret       TEXT NOT NULL,
+  extra        TEXT NOT NULL,
+  redirect_uri TEXT NOT NULL
+);
+`)
+		require.NoError(t, err)
+	})
 }

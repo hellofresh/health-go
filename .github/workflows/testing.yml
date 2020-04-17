@@ -1,0 +1,115 @@
+name: Testing
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+  release:
+    types:
+      - created
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up Go
+        uses: actions/setup-go@v2-beta
+        with:
+          go-version: ^1.14
+      - name: Check out code
+        uses: actions/checkout@v2
+      - name: Check code quality
+        run: |
+          go install -i golang.org/x/lint/golint
+          make code-quality
+
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    needs: [lint]
+
+    services:
+      postgres:
+        image: postgres:9.6-alpine
+        ports:
+          - "5432"
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      rabbit:
+        image: rabbitmq:3.6-management-alpine
+        ports:
+          - "5672"
+          - "15672"
+
+      redis:
+        image: redis:3.2-alpine
+        ports:
+          - "6379"
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      mongo:
+        image: mongo:3
+        ports:
+          - "27017"
+
+      mysql:
+        image: mysql:5.7
+        ports:
+          - "3306"
+        env:
+          MYSQL_ROOT_PASSWORD: test
+          MYSQL_DATABASE: test
+          MYSQL_USER: test
+          MYSQL_PASSWORD: test
+        options: >-
+          --health-cmd "mysqladmin ping -h 127.0.0.1 -u $$MYSQL_USER --password=$$MYSQL_PASSWORD"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      http:
+        image: pierreprinetti/apimock:latest
+        ports:
+          - "8080"
+        env:
+          HOST: ":8080"
+
+    steps:
+      - name: Set up Go
+        uses: actions/setup-go@v2-beta
+        with:
+          go-version: ^1.14
+      - name: Check out code
+        uses: actions/checkout@v2
+      - name: Run tests
+        if: success()
+        run: go test -cover ./... -coverprofile=coverage.txt -covermode=atomic
+        env:
+          HEALTH_GO_PG_DSN: postgres://test:test@localhost:${{ job.services.postgres.ports[5432] }}/test?sslmode=disable
+          HEALTH_GO_MQ_DSN: amqp://guest:guest@localhost:${{ job.services.rabbit.ports[5672] }}/
+          HEALTH_GO_MQ_URL: http://guest:guest@localhost:${{ job.services.rabbit.ports[15672] }}/
+          HEALTH_GO_RD_DSN: redis://localhost:${{ job.services.redis.ports[6379] }}/
+          HEALTH_GO_MG_DSN: mongodb://localhost:${{ job.services.mongo.ports[27017] }}/
+          HEALTH_GO_MS_DSN: test:test@tcp(localhost:${{ job.services.mysql.ports[3306] }})/test?charset=utf8
+          HEALTH_GO_HTTP_URL: http://localhost:${{ job.services.http.ports[8080] }}/status
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v1
+        if: success()
+        with:
+          file: ./coverage.txt
+          fail_ci_if_error: false

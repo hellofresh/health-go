@@ -3,7 +3,7 @@ package postgres
 import (
 	"database/sql"
 
-	_ "github.com/lib/pq"
+	_ "github.com/lib/pq" // import pg driver
 )
 
 // Config is the PostgreSQL checker configuration settings container.
