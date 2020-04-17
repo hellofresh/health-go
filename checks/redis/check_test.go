@@ -9,15 +9,6 @@ import (
 
 const rdDSNEnv = "HEALTH_GO_RD_DSN"
 
-func getDSN(t *testing.T) string {
-	if redisDSN, ok := os.LookupEnv(rdDSNEnv); ok {
-		return redisDSN
-	}
-
-	t.Fatalf("required env variable missing: %s", rdDSNEnv)
-	return ""
-}
-
 func TestNew(t *testing.T) {
 	check := New(Config{
 		DSN: getDSN(t),
@@ -25,4 +16,13 @@ func TestNew(t *testing.T) {
 
 	err := check()
 	require.NoError(t, err)
+}
+
+func getDSN(t *testing.T) string {
+	t.Helper()
+
+	redisDSN, ok := os.LookupEnv(rdDSNEnv)
+	require.True(t, ok)
+
+	return redisDSN
 }

@@ -9,15 +9,6 @@ import (
 
 const mgDSNEnv = "HEALTH_GO_MG_DSN"
 
-func getDSN(t *testing.T) string {
-	if mongoDSN, ok := os.LookupEnv(mgDSNEnv); ok {
-		return mongoDSN
-	}
-
-	t.Fatalf("required env variable missing: %s", mgDSNEnv)
-	return ""
-}
-
 func TestNew(t *testing.T) {
 	check := New(Config{
 		DSN: getDSN(t),
@@ -25,4 +16,13 @@ func TestNew(t *testing.T) {
 
 	err := check()
 	require.NoError(t, err)
+}
+
+func getDSN(t *testing.T) string {
+	t.Helper()
+
+	mongoDSN, ok := os.LookupEnv(mgDSNEnv)
+	require.True(t, ok)
+
+	return mongoDSN
 }

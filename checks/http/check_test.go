@@ -9,15 +9,6 @@ import (
 
 const httpURLEnv = "HEALTH_GO_HTTP_URL"
 
-func getURL(t *testing.T) string {
-	if httpURL, ok := os.LookupEnv(httpURLEnv); ok {
-		return httpURL
-	}
-
-	t.Fatalf("required env variable missing: %s", httpURLEnv)
-	return ""
-}
-
 func TestNew(t *testing.T) {
 	check := New(Config{
 		URL: getURL(t),
@@ -25,4 +16,13 @@ func TestNew(t *testing.T) {
 
 	err := check()
 	require.NoError(t, err)
+}
+
+func getURL(t *testing.T) string {
+	t.Helper()
+
+	httpURL, ok := os.LookupEnv(httpURLEnv)
+	require.True(t, ok)
+
+	return httpURL
 }

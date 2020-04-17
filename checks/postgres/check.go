@@ -4,14 +4,13 @@ import (
 	"database/sql"
 
 	_ "github.com/lib/pq" // import pg driver
+	wErrors "github.com/pkg/errors"
 )
 
 // Config is the PostgreSQL checker configuration settings container.
 type Config struct {
 	// DSN is the PostgreSQL instance connection DSN. Required.
 	DSN string
-	// If not set logging is skipped.
-	LogFunc func(err error, details string, extra ...interface{})
 }
 
 // New creates new PostgreSQL health check that verifies the following:
@@ -19,40 +18,38 @@ type Config struct {
 // - doing the ping command
 // - selecting postgres version
 func New(config Config) func() error {
-	if config.LogFunc == nil {
-		config.LogFunc = func(err error, details string, extra ...interface{}) {}
-	}
-
-	return func() error {
+	return func() (checkErr error) {
 		db, err := sql.Open("postgres", config.DSN)
 		if err != nil {
-			config.LogFunc(err, "PostgreSQL health check failed during connect")
-			return err
+			checkErr = wErrors.Wrap(err, "PostgreSQL health check failed on connect")
+			return
 		}
 
 		defer func() {
-			if err = db.Close(); err != nil {
-				config.LogFunc(err, "PostgreSQL health check failed during connection closing")
+			// override checkErr only if there were no other errors
+			if err := db.Close(); err != nil && checkErr == nil {
+				checkErr = wErrors.Wrap(err, "PostgreSQL health check failed on connection closing")
 			}
 		}()
 
 		err = db.Ping()
 		if err != nil {
-			config.LogFunc(err, "PostgreSQL health check failed during ping")
-			return err
+			checkErr = wErrors.Wrap(err, "PostgreSQL health check failed on ping")
+			return
 		}
 
 		rows, err := db.Query(`SELECT VERSION()`)
 		if err != nil {
-			config.LogFunc(err, "PostgreSQL health check failed during select")
-			return err
+			checkErr = wErrors.Wrap(err, "PostgreSQL health check failed on select")
+			return
 		}
 		defer func() {
-			if err = rows.Close(); err != nil {
-				config.LogFunc(err, "PostgreSQL health check failed during rows closing")
+			// override checkErr only if there were no other errors
+			if err = rows.Close(); err != nil && checkErr == nil {
+				checkErr = wErrors.Wrap(err, "PostgreSQL health check failed on rows closing")
 			}
 		}()
 
-		return nil
+		return
 	}
 }

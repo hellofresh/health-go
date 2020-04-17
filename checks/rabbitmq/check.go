@@ -5,6 +5,7 @@ import (
 	"os"
 	"time"
 
+	wErrors "github.com/pkg/errors"
 	"github.com/streadway/amqp"
 )
 
@@ -33,9 +34,6 @@ type (
 		// ConsumeTimeout is the duration that health check will try to consume published test message.
 		// If not set - 3 seconds
 		ConsumeTimeout time.Duration
-		// LogFunc is the callback function for errors logging during check.
-		// If not set logging is skipped.
-		LogFunc func(err error, details string, extra ...interface{})
 	}
 )
 
@@ -50,48 +48,50 @@ type (
 func New(config Config) func() error {
 	(&config).defaults()
 
-	return func() error {
+	return func() (checkErr error) {
 		conn, err := amqp.Dial(config.DSN)
 		if err != nil {
-			config.LogFunc(err, "RabbitMQ health check failed on dial phase")
-			return err
+			checkErr = wErrors.Wrap(err, "RabbitMQ health check failed on dial phase")
+			return
 		}
 		defer func() {
-			if err := conn.Close(); err != nil {
-				config.LogFunc(err, "RabbitMQ health check failed to close connection")
+			// override checkErr only if there were no other errors
+			if err := conn.Close(); err != nil && checkErr == nil {
+				checkErr = wErrors.Wrap(err, "RabbitMQ health check failed to close connection")
 			}
 		}()
 
 		ch, err := conn.Channel()
 		if err != nil {
-			config.LogFunc(err, "RabbitMQ health check failed on getting channel phase")
-			return err
+			checkErr = wErrors.Wrap(err, "RabbitMQ health check failed on getting channel phase")
+			return
 		}
 		defer func() {
-			if err := ch.Close(); err != nil {
-				config.LogFunc(err, "RabbitMQ health check failed to close channel")
+			// override checkErr only if there were no other errors
+			if err := ch.Close(); err != nil && checkErr == nil {
+				checkErr = wErrors.Wrap(err, "RabbitMQ health check failed to close channel")
 			}
 		}()
 
 		if err := ch.ExchangeDeclare(config.Exchange, "topic", true, false, false, false, nil); err != nil {
-			config.LogFunc(err, "RabbitMQ health check failed during declaring exchange")
-			return err
+			checkErr = wErrors.Wrap(err, "RabbitMQ health check failed during declaring exchange")
+			return
 		}
 
 		if _, err := ch.QueueDeclare(config.Queue, false, false, false, false, nil); err != nil {
-			config.LogFunc(err, "RabbitMQ health check failed during declaring queue")
-			return err
+			checkErr = wErrors.Wrap(err, "RabbitMQ health check failed during declaring queue")
+			return
 		}
 
 		if err := ch.QueueBind(config.Queue, config.RoutingKey, config.Exchange, false, nil); err != nil {
-			config.LogFunc(err, "RabbitMQ health check failed during binding")
-			return err
+			checkErr = wErrors.Wrap(err, "RabbitMQ health check failed during binding")
+			return
 		}
 
 		messages, err := ch.Consume(config.Queue, "", true, false, false, false, nil)
 		if err != nil {
-			config.LogFunc(err, "RabbitMQ health check failed during consuming")
-			return err
+			checkErr = wErrors.Wrap(err, "RabbitMQ health check failed during consuming")
+			return
 		}
 
 		done := make(chan struct{})
@@ -110,27 +110,23 @@ func New(config Config) func() error {
 
 		p := amqp.Publishing{Body: []byte(time.Now().Format(time.RFC3339Nano))}
 		if err := ch.Publish(config.Exchange, config.RoutingKey, false, false, p); err != nil {
-			config.LogFunc(err, "RabbitMQ health check failed during publishing")
-			return err
+			checkErr = wErrors.Wrap(err, "RabbitMQ health check failed during publishing")
+			return
 		}
 
 		for {
 			select {
 			case <-time.After(config.ConsumeTimeout):
-				config.LogFunc(nil, "RabbitMQ health check failed due to consume timeout")
-				return fmt.Errorf("RabbitMQ health check failed due to consume timeout")
+				checkErr = wErrors.Wrap(err, "RabbitMQ health check failed due to consume timeout")
+				return
 			case <-done:
-				return nil
+				return
 			}
 		}
 	}
 }
 
 func (c *Config) defaults() {
-	if c.LogFunc == nil {
-		c.LogFunc = func(err error, details string, extra ...interface{}) {}
-	}
-
 	if c.Exchange == "" {
 		c.Exchange = defaultExchange
 	}

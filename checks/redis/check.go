@@ -1,30 +1,23 @@
 package redis
 
 import (
-	"errors"
 	"time"
 
 	"github.com/gomodule/redigo/redis"
+	wErrors "github.com/pkg/errors"
 )
 
 // Config is the Redis checker configuration settings container.
 type Config struct {
 	// DSN is the Redis instance connection DSN. Required.
 	DSN string
-	// LogFunc is the callback function for errors logging during check.
-	// If not set logging is skipped.
-	LogFunc func(err error, details string, extra ...interface{})
 }
 
 // New creates new Redis health check that verifies the following:
 // - connection establishing
 // - doing the PING command and verifying the response
 func New(config Config) func() error {
-	if config.LogFunc == nil {
-		config.LogFunc = func(err error, details string, extra ...interface{}) {}
-	}
-
-	return func() error {
+	return func() (checkErr error) {
 		pool := &redis.Pool{
 			MaxIdle:     1,
 			IdleTimeout: 10 * time.Second,
@@ -32,24 +25,29 @@ func New(config Config) func() error {
 		}
 
 		conn := pool.Get()
-		defer conn.Close()
+		defer func() {
+			// override checkErr only if there were no other errors
+			if err := conn.Close(); err != nil && checkErr == nil {
+				checkErr = wErrors.Wrap(err, "Redis health check failed on connection closing")
+			}
+		}()
 
 		data, err := conn.Do("PING")
 		if err != nil {
-			config.LogFunc(err, "Redis ping failed")
-			return err
+			checkErr = wErrors.Wrap(err, "Redis ping failed")
+			return
 		}
 
 		if data == nil {
-			config.LogFunc(nil, "Empty response for redis ping")
-			return errors.New("empty response for redis ping")
+			checkErr = wErrors.New("empty response for redis ping")
+			return
 		}
 
 		if data != "PONG" {
-			config.LogFunc(nil, "Unexpected response for redis ping", data)
-			return errors.New("unexpected response for redis ping")
+			checkErr = wErrors.Errorf("unexpected response for redis ping %s", data)
+			return
 		}
 
-		return nil
+		return
 	}
 }
