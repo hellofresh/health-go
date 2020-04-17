@@ -4,7 +4,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/garyburd/redigo/redis"
+	"github.com/gomodule/redigo/redis"
 )
 
 // Config is the Redis checker configuration settings container.
