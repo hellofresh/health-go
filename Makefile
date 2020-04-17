@@ -29,7 +29,7 @@ lint:
 
 format:
 	@echo "$(OK_COLOR)==> Checking code formating with 'gofmt' tool$(NO_COLOR)"
-	@gofmt -l -s cmd pkg | grep ".*\.go"; if [ "$$?" = "0" ]; then exit 1; fi
+	@gofmt -l -s checks | grep ".*\.go"; if [ "$$?" = "0" ]; then exit 1; fi
 
 vet:
 	@echo "$(OK_COLOR)==> Checking code correctness with 'go vet' tool$(NO_COLOR)"
