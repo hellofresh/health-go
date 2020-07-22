@@ -23,16 +23,12 @@ func TestRegisterWithNoName(t *testing.T) {
 			return nil
 		},
 	})
-	if err == nil {
-		t.Error("health check registration with empty name should return an error, but did not get one")
-	}
+	require.Error(t, err, "health check registration with empty name should return an error")
 }
 
 func TestDoubleRegister(t *testing.T) {
 	Reset()
-	if len(checkMap) != 0 {
-		t.Errorf("checks lenght differes from zero: got %d", len(checkMap))
-	}
+	assert.Len(t, checkMap, 0)
 
 	healthCheckName := "health-check"
 
@@ -63,22 +59,22 @@ func TestHealthHandler(t *testing.T) {
 
 	res := httptest.NewRecorder()
 	req, err := http.NewRequest("GET", "http://localhost/status", nil)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
-	Register(Config{
+	err = Register(Config{
 		Name:      "rabbitmq",
 		SkipOnErr: true,
 		Check:     func() error { return errors.New(checkErr) },
 	})
+	require.NoError(t, err)
 
-	Register(Config{
+	err = Register(Config{
 		Name:  "mongodb",
 		Check: func() error { return nil },
 	})
+	require.NoError(t, err)
 
-	Register(Config{
+	err = Register(Config{
 		Name:      "snail-service",
 		SkipOnErr: true,
 		Timeout:   time.Second * 1,
@@ -87,8 +83,9 @@ func TestHealthHandler(t *testing.T) {
 			return nil
 		},
 	})
+	require.NoError(t, err)
 
-	h := http.Handler(Handler())
+	h := Handler()
 	h.ServeHTTP(res, req)
 
 	assert.Equal(t, http.StatusOK, res.Code, "status handler returned wrong status code")
@@ -97,7 +94,7 @@ func TestHealthHandler(t *testing.T) {
 	err = json.NewDecoder(res.Body).Decode(&body)
 	require.NoError(t, err)
 
-	assert.Equal(t, statusPartiallyAvailable, body["status"], "body returned wrong status")
+	assert.Equal(t, string(StatusPartiallyAvailable), body["status"], "body returned wrong status")
 
 	failure, ok := body["failures"]
 	assert.True(t, ok, "body returned nil failures field")
@@ -106,8 +103,8 @@ func TestHealthHandler(t *testing.T) {
 	assert.True(t, ok, "body returned nil failures.rabbitmq field")
 
 	assert.Equal(t, checkErr, f["rabbitmq"], "body returned wrong status for rabbitmq")
-	assert.Equal(t, failureTimeout, f["snail-service"], "body returned wrong status for snail-service")
+	assert.Equal(t, string(StatusTimeout), f["snail-service"], "body returned wrong status for snail-service")
 
 	Reset()
-	assert.Len(t, checkMap, 0, "checks length diffres from zero")
+	assert.Len(t, checkMap, 0, "checks length differs from zero")
 }

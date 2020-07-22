@@ -15,11 +15,15 @@ var (
 	checkMap = make(map[string]Config)
 )
 
+// Status type represents health status
+type Status string
+
+// Possible health statuses
 const (
-	statusOK                 = "OK"
-	statusPartiallyAvailable = "Partially Available"
-	statusUnavailable        = "Unavailable"
-	failureTimeout           = "Timeout during health check"
+	StatusOK                 Status = "OK"
+	StatusPartiallyAvailable Status = "Partially Available"
+	StatusUnavailable        Status = "Unavailable"
+	StatusTimeout            Status = "Timeout during health check"
 )
 
 type (
@@ -41,7 +45,7 @@ type (
 	// Check represents the health check response.
 	Check struct {
 		// Status is the check status.
-		Status string `json:"status"`
+		Status Status `json:"status"`
 		// Timestamp is the time in which the check occurred.
 		Timestamp time.Time `json:"timestamp"`
 		// Failures holds the failed checks along with their messages.
@@ -100,10 +104,30 @@ func Handler() http.Handler {
 
 // HandlerFunc is the HTTP handler function.
 func HandlerFunc(w http.ResponseWriter, r *http.Request) {
+	c := Measure()
+
+	w.Header().Set("Content-Type", "application/json")
+	data, err := json.Marshal(c)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	code := http.StatusOK
+	if c.Status == StatusUnavailable {
+		code = http.StatusServiceUnavailable
+	}
+	w.WriteHeader(code)
+	w.Write(data)
+}
+
+// Measure runs all the registered health checks and returns summary status
+func Measure() Check {
 	mu.Lock()
 	defer mu.Unlock()
 
-	status := statusOK
+	status := StatusOK
 	total := len(checkMap)
 	failures := make(map[string]string)
 	resChan := make(chan checkResponse, total)
@@ -113,12 +137,14 @@ func HandlerFunc(w http.ResponseWriter, r *http.Request) {
 
 	go func() {
 		defer close(resChan)
+
 		wg.Wait()
 	}()
 
 	for _, c := range checkMap {
 		go func(c Config) {
 			defer wg.Done()
+
 			select {
 			case resChan <- checkResponse{c.Name, c.SkipOnErr, c.Check()}:
 			default:
@@ -129,34 +155,20 @@ func HandlerFunc(w http.ResponseWriter, r *http.Request) {
 		for {
 			select {
 			case <-time.After(c.Timeout):
-				failures[c.Name] = failureTimeout
-				setStatus(&status, c.SkipOnErr)
+				failures[c.Name] = string(StatusTimeout)
+				status = getAvailability(status, c.SkipOnErr)
 				break loop
 			case res := <-resChan:
 				if res.err != nil {
 					failures[res.name] = res.err.Error()
-					setStatus(&status, res.skipOnErr)
+					status = getAvailability(status, res.skipOnErr)
 				}
 				break loop
 			}
 		}
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	c := newCheck(status, failures)
-	data, err := json.Marshal(c)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	code := http.StatusOK
-	if status == statusUnavailable {
-		code = http.StatusServiceUnavailable
-	}
-	w.WriteHeader(code)
-	w.Write(data)
+	return newCheck(status, failures)
 }
 
 // Reset unregisters all previously set check configs
@@ -167,9 +179,9 @@ func Reset() {
 	checkMap = make(map[string]Config)
 }
 
-func newCheck(status string, failures map[string]string) Check {
+func newCheck(s Status, failures map[string]string) Check {
 	return Check{
-		Status:    status,
+		Status:    s,
 		Timestamp: time.Now(),
 		Failures:  failures,
 		System:    newSystemMetrics(),
@@ -189,10 +201,10 @@ func newSystemMetrics() System {
 	}
 }
 
-func setStatus(status *string, skipOnErr bool) {
-	if skipOnErr && *status != statusUnavailable {
-		*status = statusPartiallyAvailable
-	} else {
-		*status = statusUnavailable
+func getAvailability(s Status, skipOnErr bool) Status {
+	if skipOnErr && s != StatusUnavailable {
+		return StatusPartiallyAvailable
 	}
+
+	return StatusUnavailable
 }
