@@ -2,9 +2,9 @@ package mongo
 
 import (
 	"context"
+	"fmt"
 	"time"
 
-	wErrors "github.com/pkg/errors"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
@@ -51,7 +51,7 @@ func New(config Config) func() error {
 
 		client, err := mongo.NewClient(options.Client().ApplyURI(config.DSN))
 		if err != nil {
-			checkErr = wErrors.Wrap(err, "mongoDB health check failed on client creation")
+			checkErr = fmt.Errorf("mongoDB health check failed on client creation: %w", err)
 			return
 		}
 
@@ -60,7 +60,7 @@ func New(config Config) func() error {
 
 		err = client.Connect(ctx)
 		if err != nil {
-			checkErr = wErrors.Wrap(err, "mongoDB health check failed on connect")
+			checkErr = fmt.Errorf("mongoDB health check failed on connect: %w", err)
 			return
 		}
 
@@ -70,7 +70,7 @@ func New(config Config) func() error {
 
 			// override checkErr only if there were no other errors
 			if err := client.Disconnect(ctx); err != nil && checkErr == nil {
-				checkErr = wErrors.Wrap(err, "mongoDB health check failed on closing connection")
+				checkErr = fmt.Errorf("mongoDB health check failed on closing connection: %w", err)
 			}
 		}()
 
@@ -79,7 +79,7 @@ func New(config Config) func() error {
 
 		err = client.Ping(ctx, readpref.Primary())
 		if err != nil {
-			checkErr = wErrors.Wrap(err, "mongoDB health check failed on ping")
+			checkErr = fmt.Errorf("mongoDB health check failed on ping: %w", err)
 			return
 		}
 
