@@ -2,10 +2,10 @@ package http
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"net/http"
 	"time"
-
-	wErrors "github.com/pkg/errors"
 )
 
 const defaultRequestTimeout = 5 * time.Second
@@ -31,7 +31,7 @@ func New(config Config) func() error {
 	return func() error {
 		req, err := http.NewRequest(http.MethodGet, config.URL, nil)
 		if err != nil {
-			return wErrors.Wrap(err, "creating the request for the health check failed")
+			return fmt.Errorf("creating the request for the health check failed: %w", err)
 		}
 
 		ctx, cancel := context.WithCancel(context.TODO())
@@ -46,12 +46,12 @@ func New(config Config) func() error {
 
 		res, err := http.DefaultClient.Do(req)
 		if err != nil {
-			return wErrors.Wrap(err, "making the request for the health check failed")
+			return fmt.Errorf("making the request for the health check failed: %w", err)
 		}
 		defer res.Body.Close()
 
 		if res.StatusCode >= http.StatusInternalServerError {
-			return wErrors.New("remote service is not available at the moment")
+			return errors.New("remote service is not available at the moment")
 		}
 
 		return nil
