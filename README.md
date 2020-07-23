@@ -16,6 +16,8 @@
 
 The library exports `Handler` and `HandlerFunc` functions which are fully compatible with `net/http`.
 
+Additionally, library exports `Measure` function that returns summary status for all the registered health checks, so it can be used in non-HTTP environments.
+
 ### Handler
 
 ```go
