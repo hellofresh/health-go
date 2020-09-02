@@ -1,11 +1,11 @@
 package redis
 
 import (
-	"errors"
+	"context"
 	"fmt"
-	"time"
+	"strings"
 
-	"github.com/gomodule/redigo/redis"
+	"github.com/go-redis/redis/v8"
 )
 
 // Config is the Redis checker configuration settings container.
@@ -18,37 +18,27 @@ type Config struct {
 // - connection establishing
 // - doing the PING command and verifying the response
 func New(config Config) func() error {
-	return func() (checkErr error) {
-		pool := &redis.Pool{
-			MaxIdle:     1,
-			IdleTimeout: 10 * time.Second,
-			Dial:        func() (redis.Conn, error) { return redis.DialURL(config.DSN) },
-		}
+	// support all DSN formats (for backward compatibility) - with and w/out schema and path part:
+	// - redis://localhost:1234/
+	// - localhost:1234
+	redisDSN := strings.TrimPrefix(config.DSN, "redis://")
+	redisDSN = strings.TrimSuffix(redisDSN, "/")
 
-		conn := pool.Get()
-		defer func() {
-			// override checkErr only if there were no other errors
-			if err := conn.Close(); err != nil && checkErr == nil {
-				checkErr = fmt.Errorf("Redis health check failed on connection closing: %w", err)
-			}
-		}()
+	return func() error {
+		rdb := redis.NewClient(&redis.Options{
+			Addr: redisDSN,
+		})
+		defer rdb.Close()
 
-		data, err := conn.Do("PING")
+		pong, err := rdb.Ping(context.TODO()).Result()
 		if err != nil {
-			checkErr = fmt.Errorf("Redis ping failed: %w", err)
-			return
+			return fmt.Errorf("redis ping failed: %w", err)
 		}
 
-		if data == nil {
-			checkErr = errors.New("empty response for redis ping")
-			return
+		if pong != "PONG" {
+			return fmt.Errorf("unexpected response for redis ping: %q", pong)
 		}
 
-		if data != "PONG" {
-			checkErr = fmt.Errorf("unexpected response for redis ping %s", data)
-			return
-		}
-
-		return
+		return nil
 	}
 }
