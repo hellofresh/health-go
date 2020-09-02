@@ -11,6 +11,7 @@
   * HTTP
   * MongoDB
   * MySQL
+  * gRPC
 
 ## Usage
 
