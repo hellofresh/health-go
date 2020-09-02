@@ -1,11 +1,10 @@
 package redis
 
 import (
-	"context"
 	"fmt"
 	"strings"
 
-	"github.com/go-redis/redis/v8"
+	"github.com/go-redis/redis/v7"
 )
 
 // Config is the Redis checker configuration settings container.
@@ -30,7 +29,7 @@ func New(config Config) func() error {
 		})
 		defer rdb.Close()
 
-		pong, err := rdb.Ping(context.TODO()).Result()
+		pong, err := rdb.Ping().Result()
 		if err != nil {
 			return fmt.Errorf("redis ping failed: %w", err)
 		}
