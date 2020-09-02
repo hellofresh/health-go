@@ -34,15 +34,12 @@ func New(config Config) func() error {
 			return fmt.Errorf("creating the request for the health check failed: %w", err)
 		}
 
-		ctx, cancel := context.WithCancel(context.TODO())
+		ctx, cancel := context.WithTimeout(context.Background(), config.RequestTimeout)
+		defer cancel()
 
 		// Inform remote service to close the connection after the transaction is complete
 		req.Header.Set("Connection", "close")
 		req = req.WithContext(ctx)
-
-		time.AfterFunc(config.RequestTimeout, func() {
-			cancel()
-		})
 
 		res, err := http.DefaultClient.Do(req)
 		if err != nil {
