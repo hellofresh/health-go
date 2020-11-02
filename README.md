@@ -25,11 +25,12 @@ Additionally, library exports `Measure` function that returns summary status for
 package main
 
 import (
+  "context"
   "net/http"
   "time"
 
-  "github.com/hellofresh/health-go/v3"
-  healthMysql "github.com/hellofresh/health-go/v3/checks/mysql"
+  "github.com/hellofresh/health-go/v4"
+  healthMysql "github.com/hellofresh/health-go/v4/checks/mysql"
 )
 
 func main() {
@@ -37,14 +38,14 @@ func main() {
     Name: "rabbitmq",
     Timeout: time.Second*5,
     SkipOnErr: true,
-    Check: func() error {
+    Check: func(ctx context.Context) error {
       // rabbitmq health check implementation goes here
     },
   })
 
   health.Register(health.Config{
     Name: "mongodb",
-    Check: func() error {
+    Check: func(ctx context.Context) error {
       // mongo_db health check implementation goes here
     },
   })
@@ -68,12 +69,13 @@ func main() {
 package main
 
 import (
+  "context"    
   "net/http"
   "time"
 
   "github.com/go-chi/chi"
-  "github.com/hellofresh/health-go/v3"
-  healthMysql "github.com/hellofresh/health-go/v3/checks/mysql"
+  "github.com/hellofresh/health-go/v4"
+  healthMysql "github.com/hellofresh/health-go/v4/checks/mysql"
 )
 
 func main() {
@@ -81,14 +83,14 @@ func main() {
     Name: "rabbitmq",
     Timeout: time.Second*5,
     SkipOnErr: true,
-    Check: func() error {
+    Check: func(ctx context.Context) error {
       // rabbitmq health check implementation goes here
     }),
   })
 
   health.Register(health.Config{
     Name: "mongodb",
-    Check: func() error {
+    Check: func(ctx context.Context) error {
       // mongo_db health check implementation goes here
     },
   })

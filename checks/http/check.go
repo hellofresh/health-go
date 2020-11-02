@@ -23,18 +23,18 @@ type Config struct {
 // - connection establishing
 // - getting response status from defined URL
 // - verifying that status code is less than 500
-func New(config Config) func() error {
+func New(config Config) func(ctx context.Context) error {
 	if config.RequestTimeout == 0 {
 		config.RequestTimeout = defaultRequestTimeout
 	}
 
-	return func() error {
+	return func(ctx context.Context) error {
 		req, err := http.NewRequest(http.MethodGet, config.URL, nil)
 		if err != nil {
 			return fmt.Errorf("creating the request for the health check failed: %w", err)
 		}
 
-		ctx, cancel := context.WithTimeout(context.Background(), config.RequestTimeout)
+		ctx, cancel := context.WithTimeout(ctx, config.RequestTimeout)
 		defer cancel()
 
 		// Inform remote service to close the connection after the transaction is complete

@@ -25,12 +25,12 @@ type Config struct {
 }
 
 // New creates new gRPC health check
-func New(config Config) func() error {
+func New(config Config) func(ctx context.Context) error {
 	if config.CheckTimeout == 0 {
 		config.CheckTimeout = defaultCheckTimeout
 	}
 
-	return func() error {
+	return func(ctx context.Context) error {
 		// Set up a connection to the gRPC server
 		conn, err := grpc.Dial(config.Target, config.DialOptions...)
 		if err != nil {
@@ -40,7 +40,7 @@ func New(config Config) func() error {
 
 		healthClient := grpc_health_v1.NewHealthClient(conn)
 
-		ctx, cancel := context.WithTimeout(context.Background(), config.CheckTimeout)
+		ctx, cancel := context.WithTimeout(ctx, config.CheckTimeout)
 		defer cancel()
 
 		res, err := healthClient.Check(ctx, &grpc_health_v1.HealthCheckRequest{

@@ -1,6 +1,7 @@
 package health
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -19,7 +20,7 @@ const (
 func TestRegisterWithNoName(t *testing.T) {
 	err := Register(Config{
 		Name: "",
-		Check: func() error {
+		Check: func(context.Context) error {
 			return nil
 		},
 	})
@@ -34,7 +35,7 @@ func TestDoubleRegister(t *testing.T) {
 
 	conf := Config{
 		Name: healthCheckName,
-		Check: func() error {
+		Check: func(context.Context) error {
 			return nil
 		},
 	}
@@ -47,7 +48,7 @@ func TestDoubleRegister(t *testing.T) {
 
 	err = Register(Config{
 		Name: healthCheckName,
-		Check: func() error {
+		Check: func(context.Context) error {
 			return errors.New("health checks registered")
 		},
 	})
@@ -64,13 +65,13 @@ func TestHealthHandler(t *testing.T) {
 	err = Register(Config{
 		Name:      "rabbitmq",
 		SkipOnErr: true,
-		Check:     func() error { return errors.New(checkErr) },
+		Check:     func(context.Context) error { return errors.New(checkErr) },
 	})
 	require.NoError(t, err)
 
 	err = Register(Config{
 		Name:  "mongodb",
-		Check: func() error { return nil },
+		Check: func(context.Context) error { return nil },
 	})
 	require.NoError(t, err)
 
@@ -78,7 +79,7 @@ func TestHealthHandler(t *testing.T) {
 		Name:      "snail-service",
 		SkipOnErr: true,
 		Timeout:   time.Second * 1,
-		Check: func() error {
+		Check: func(context.Context) error {
 			time.Sleep(time.Second * 2)
 			return nil
 		},

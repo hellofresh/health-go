@@ -1,6 +1,7 @@
 package rabbitmq
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"time"
@@ -44,10 +45,10 @@ type (
 // - binding a queue to the exchange with the defined routing key
 // - publishing a message to the exchange with the defined routing key
 // - consuming published message
-func New(config Config) func() error {
+func New(config Config) func(ctx context.Context) error {
 	(&config).defaults()
 
-	return func() (checkErr error) {
+	return func(ctx context.Context) (checkErr error) {
 		conn, err := amqp.Dial(config.DSN)
 		if err != nil {
 			checkErr = fmt.Errorf("RabbitMQ health check failed on dial phase: %w", err)

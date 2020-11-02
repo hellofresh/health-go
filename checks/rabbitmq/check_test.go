@@ -1,6 +1,7 @@
 package rabbitmq
 
 import (
+	"context"
 	"os"
 	"testing"
 
@@ -15,7 +16,7 @@ func TestNew(t *testing.T) {
 		DSN: getDSN(t),
 	})
 
-	err := check()
+	err := check(context.Background())
 	require.NoError(t, err)
 }
 
