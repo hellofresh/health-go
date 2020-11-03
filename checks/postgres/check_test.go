@@ -1,6 +1,7 @@
 package postgres
 
 import (
+	"context"
 	"database/sql"
 	"os"
 	"sync"
@@ -21,7 +22,7 @@ func TestNew(t *testing.T) {
 		DSN: getDSN(t),
 	})
 
-	err := check()
+	err := check(context.Background())
 	require.NoError(t, err)
 }
 
@@ -47,8 +48,9 @@ func TestEnsureConnectionIsClosed(t *testing.T) {
 		DSN: pgDSN,
 	})
 
+	ctx := context.Background()
 	for i := 0; i < 10; i++ {
-		err := check()
+		err := check(ctx)
 		assert.NoError(t, err)
 		time.Sleep(100 * time.Millisecond)
 	}

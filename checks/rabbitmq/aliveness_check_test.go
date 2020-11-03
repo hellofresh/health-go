@@ -1,12 +1,13 @@
 package rabbitmq
 
 import (
+	"context"
 	"os"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/hellofresh/health-go/v3/checks/http"
+	"github.com/hellofresh/health-go/v4/checks/http"
 )
 
 const httpURLEnv = "HEALTH_GO_MQ_URL"
@@ -16,7 +17,7 @@ func TestAliveness(t *testing.T) {
 		URL: getURL(t),
 	})
 
-	err := check()
+	err := check(context.Background())
 	require.NoError(t, err)
 }
 

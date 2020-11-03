@@ -32,7 +32,7 @@ type Config struct {
 // New creates new MongoDB health check that verifies the following:
 // - connection establishing
 // - doing the ping command
-func New(config Config) func() error {
+func New(config Config) func(ctx context.Context) error {
 	if config.TimeoutConnect == 0 {
 		config.TimeoutConnect = defaultTimeoutConnect
 	}
@@ -45,39 +45,36 @@ func New(config Config) func() error {
 		config.TimeoutPing = defaultTimeoutPing
 	}
 
-	return func() (checkErr error) {
-		var ctx context.Context
-		var cancel context.CancelFunc
-
+	return func(ctx context.Context) (checkErr error) {
 		client, err := mongo.NewClient(options.Client().ApplyURI(config.DSN))
 		if err != nil {
 			checkErr = fmt.Errorf("mongoDB health check failed on client creation: %w", err)
 			return
 		}
 
-		ctx, cancel = context.WithTimeout(context.Background(), config.TimeoutConnect)
-		defer cancel()
+		ctxConn, cancelConn := context.WithTimeout(ctx, config.TimeoutConnect)
+		defer cancelConn()
 
-		err = client.Connect(ctx)
+		err = client.Connect(ctxConn)
 		if err != nil {
 			checkErr = fmt.Errorf("mongoDB health check failed on connect: %w", err)
 			return
 		}
 
 		defer func() {
-			ctx, cancel = context.WithTimeout(context.Background(), config.TimeoutDisconnect)
-			defer cancel()
+			ctxDisc, cancelDisc := context.WithTimeout(ctx, config.TimeoutDisconnect)
+			defer cancelDisc()
 
 			// override checkErr only if there were no other errors
-			if err := client.Disconnect(ctx); err != nil && checkErr == nil {
+			if err := client.Disconnect(ctxDisc); err != nil && checkErr == nil {
 				checkErr = fmt.Errorf("mongoDB health check failed on closing connection: %w", err)
 			}
 		}()
 
-		ctx, cancel = context.WithTimeout(context.Background(), config.TimeoutPing)
-		defer cancel()
+		ctxPing, cancelPing := context.WithTimeout(ctx, config.TimeoutPing)
+		defer cancelPing()
 
-		err = client.Ping(ctx, readpref.Primary())
+		err = client.Ping(ctxPing, readpref.Primary())
 		if err != nil {
 			checkErr = fmt.Errorf("mongoDB health check failed on ping: %w", err)
 			return

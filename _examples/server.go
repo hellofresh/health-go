@@ -1,14 +1,15 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"net/http"
 	"time"
 
-	"github.com/hellofresh/health-go/v3"
-	healthHttp "github.com/hellofresh/health-go/v3/checks/http"
-	healthMySql "github.com/hellofresh/health-go/v3/checks/mysql"
-	healthPg "github.com/hellofresh/health-go/v3/checks/postgres"
+	"github.com/hellofresh/health-go/v4"
+	healthHttp "github.com/hellofresh/health-go/v4/checks/http"
+	healthMySql "github.com/hellofresh/health-go/v4/checks/mysql"
+	healthPg "github.com/hellofresh/health-go/v4/checks/postgres"
 )
 
 func main() {
@@ -17,13 +18,13 @@ func main() {
 		Name:      "some-custom-check-fail",
 		Timeout:   time.Second * 5,
 		SkipOnErr: true,
-		Check:     func() error { return errors.New("failed during custom health check") },
+		Check:     func(context.Context) error { return errors.New("failed during custom health check") },
 	})
 
 	// custom health check example (success)
 	health.Register(health.Config{
 		Name:  "some-custom-check-success",
-		Check: func() error { return nil },
+		Check: func(context.Context) error { return nil },
 	})
 
 	// http health check example

@@ -1,6 +1,7 @@
 package health
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -28,7 +29,7 @@ const (
 
 type (
 	// CheckFunc is the func which executes the check.
-	CheckFunc func() error
+	CheckFunc func(context.Context) error
 
 	// Config carries the parameters to run the check.
 	Config struct {
@@ -104,7 +105,7 @@ func Handler() http.Handler {
 
 // HandlerFunc is the HTTP handler function.
 func HandlerFunc(w http.ResponseWriter, r *http.Request) {
-	c := Measure()
+	c := Measure(r.Context())
 
 	w.Header().Set("Content-Type", "application/json")
 	data, err := json.Marshal(c)
@@ -123,7 +124,7 @@ func HandlerFunc(w http.ResponseWriter, r *http.Request) {
 }
 
 // Measure runs all the registered health checks and returns summary status
-func Measure() Check {
+func Measure(ctx context.Context) Check {
 	mu.Lock()
 	defer mu.Unlock()
 
@@ -146,7 +147,7 @@ func Measure() Check {
 			defer wg.Done()
 
 			select {
-			case resChan <- checkResponse{c.Name, c.SkipOnErr, c.Check()}:
+			case resChan <- checkResponse{c.Name, c.SkipOnErr, c.Check(ctx)}:
 			default:
 			}
 		}(c)

@@ -1,6 +1,7 @@
 package postgres
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 
@@ -17,8 +18,8 @@ type Config struct {
 // - connection establishing
 // - doing the ping command
 // - selecting postgres version
-func New(config Config) func() error {
-	return func() (checkErr error) {
+func New(config Config) func(ctx context.Context) error {
+	return func(ctx context.Context) (checkErr error) {
 		db, err := sql.Open("postgres", config.DSN)
 		if err != nil {
 			checkErr = fmt.Errorf("PostgreSQL health check failed on connect: %w", err)
@@ -32,13 +33,13 @@ func New(config Config) func() error {
 			}
 		}()
 
-		err = db.Ping()
+		err = db.PingContext(ctx)
 		if err != nil {
 			checkErr = fmt.Errorf("PostgreSQL health check failed on ping: %w", err)
 			return
 		}
 
-		rows, err := db.Query(`SELECT VERSION()`)
+		rows, err := db.QueryContext(ctx, `SELECT VERSION()`)
 		if err != nil {
 			checkErr = fmt.Errorf("PostgreSQL health check failed on select: %w", err)
 			return

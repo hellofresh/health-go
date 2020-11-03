@@ -1,6 +1,7 @@
 package grpc
 
 import (
+	"context"
 	"log"
 	"net"
 	"os"
@@ -53,7 +54,7 @@ func TestNew_WithServingStatusServing(t *testing.T) {
 		},
 	})
 
-	err := check()
+	err := check(context.Background())
 	require.NoError(t, err)
 }
 
@@ -68,7 +69,7 @@ func TestNew_WithServingStatusUnknown(t *testing.T) {
 		},
 	})
 
-	err := check()
+	err := check(context.Background())
 	require.Error(t, err)
 }
 
@@ -83,6 +84,6 @@ func TestNew_WithServingStatusNotServing(t *testing.T) {
 		},
 	})
 
-	err := check()
+	err := check(context.Background())
 	require.Error(t, err)
 }

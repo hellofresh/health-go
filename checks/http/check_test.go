@@ -1,6 +1,7 @@
 package http
 
 import (
+	"context"
 	"os"
 	"testing"
 
@@ -14,7 +15,7 @@ func TestNew(t *testing.T) {
 		URL: getURL(t),
 	})
 
-	err := check()
+	err := check(context.Background())
 	require.NoError(t, err)
 }
 
