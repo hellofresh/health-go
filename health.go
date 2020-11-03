@@ -11,11 +11,6 @@ import (
 	"time"
 )
 
-var (
-	mu       sync.Mutex
-	checkMap = make(map[string]Config)
-)
-
 // Status type represents health status
 type Status string
 
@@ -69,6 +64,12 @@ type (
 		AllocBytes int `json:"alloc_bytes"`
 	}
 
+	// Health is the health-checks container
+	Health struct {
+		mu     sync.Mutex
+		checks map[string]Config
+	}
+
 	checkResponse struct {
 		name      string
 		skipOnErr bool
@@ -76,8 +77,23 @@ type (
 	}
 )
 
+// New instantiates and build new health check container
+func New(opts ...Option) (*Health, error) {
+	h := &Health{
+		checks: make(map[string]Config),
+	}
+
+	for _, o := range opts {
+		if err := o(h); err != nil {
+			return nil, err
+		}
+	}
+
+	return h, nil
+}
+
 // Register registers a check config to be performed.
-func Register(c Config) error {
+func (h *Health) Register(c Config) error {
 	if c.Timeout == 0 {
 		c.Timeout = time.Second * 2
 	}
@@ -86,26 +102,26 @@ func Register(c Config) error {
 		return errors.New("health check must have a name to be registered")
 	}
 
-	mu.Lock()
-	defer mu.Unlock()
+	h.mu.Lock()
+	defer h.mu.Unlock()
 
-	if _, ok := checkMap[c.Name]; ok {
+	if _, ok := h.checks[c.Name]; ok {
 		return fmt.Errorf("health check %s is already registered", c.Name)
 	}
 
-	checkMap[c.Name] = c
+	h.checks[c.Name] = c
 
 	return nil
 }
 
 // Handler returns an HTTP handler (http.HandlerFunc).
-func Handler() http.Handler {
-	return http.HandlerFunc(HandlerFunc)
+func (h *Health) Handler() http.Handler {
+	return http.HandlerFunc(h.HandlerFunc)
 }
 
 // HandlerFunc is the HTTP handler function.
-func HandlerFunc(w http.ResponseWriter, r *http.Request) {
-	c := Measure(r.Context())
+func (h *Health) HandlerFunc(w http.ResponseWriter, r *http.Request) {
+	c := h.Measure(r.Context())
 
 	w.Header().Set("Content-Type", "application/json")
 	data, err := json.Marshal(c)
@@ -124,12 +140,12 @@ func HandlerFunc(w http.ResponseWriter, r *http.Request) {
 }
 
 // Measure runs all the registered health checks and returns summary status
-func Measure(ctx context.Context) Check {
-	mu.Lock()
-	defer mu.Unlock()
+func (h *Health) Measure(ctx context.Context) Check {
+	h.mu.Lock()
+	defer h.mu.Unlock()
 
 	status := StatusOK
-	total := len(checkMap)
+	total := len(h.checks)
 	failures := make(map[string]string)
 	resChan := make(chan checkResponse, total)
 
@@ -142,7 +158,7 @@ func Measure(ctx context.Context) Check {
 		wg.Wait()
 	}()
 
-	for _, c := range checkMap {
+	for _, c := range h.checks {
 		go func(c Config) {
 			defer wg.Done()
 
@@ -170,14 +186,6 @@ func Measure(ctx context.Context) Check {
 	}
 
 	return newCheck(status, failures)
-}
-
-// Reset unregisters all previously set check configs
-func Reset() {
-	mu.Lock()
-	defer mu.Unlock()
-
-	checkMap = make(map[string]Config)
 }
 
 func newCheck(s Status, failures map[string]string) Check {
