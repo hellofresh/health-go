@@ -18,7 +18,10 @@ const (
 )
 
 func TestRegisterWithNoName(t *testing.T) {
-	err := Register(Config{
+	h, err := New()
+	require.NoError(t, err)
+
+	err = h.Register(Config{
 		Name: "",
 		Check: func(context.Context) error {
 			return nil
@@ -28,8 +31,8 @@ func TestRegisterWithNoName(t *testing.T) {
 }
 
 func TestDoubleRegister(t *testing.T) {
-	Reset()
-	assert.Len(t, checkMap, 0)
+	h, err := New()
+	require.NoError(t, err)
 
 	healthCheckName := "health-check"
 
@@ -40,13 +43,13 @@ func TestDoubleRegister(t *testing.T) {
 		},
 	}
 
-	err := Register(conf)
+	err = h.Register(conf)
 	require.NoError(t, err, "the first registration of a health check should not return an error, but got one")
 
-	err = Register(conf)
+	err = h.Register(conf)
 	assert.Error(t, err, "the second registration of a health check config should return an error, but did not")
 
-	err = Register(Config{
+	err = h.Register(Config{
 		Name: healthCheckName,
 		Check: func(context.Context) error {
 			return errors.New("health checks registered")
@@ -56,26 +59,27 @@ func TestDoubleRegister(t *testing.T) {
 }
 
 func TestHealthHandler(t *testing.T) {
-	Reset()
+	h, err := New()
+	require.NoError(t, err)
 
 	res := httptest.NewRecorder()
 	req, err := http.NewRequest("GET", "http://localhost/status", nil)
 	require.NoError(t, err)
 
-	err = Register(Config{
+	err = h.Register(Config{
 		Name:      "rabbitmq",
 		SkipOnErr: true,
 		Check:     func(context.Context) error { return errors.New(checkErr) },
 	})
 	require.NoError(t, err)
 
-	err = Register(Config{
+	err = h.Register(Config{
 		Name:  "mongodb",
 		Check: func(context.Context) error { return nil },
 	})
 	require.NoError(t, err)
 
-	err = Register(Config{
+	err = h.Register(Config{
 		Name:      "snail-service",
 		SkipOnErr: true,
 		Timeout:   time.Second * 1,
@@ -86,8 +90,8 @@ func TestHealthHandler(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	h := Handler()
-	h.ServeHTTP(res, req)
+	handler := h.Handler()
+	handler.ServeHTTP(res, req)
 
 	assert.Equal(t, http.StatusOK, res.Code, "status handler returned wrong status code")
 
@@ -105,7 +109,4 @@ func TestHealthHandler(t *testing.T) {
 
 	assert.Equal(t, checkErr, f["rabbitmq"], "body returned wrong status for rabbitmq")
 	assert.Equal(t, string(StatusTimeout), f["snail-service"], "body returned wrong status for snail-service")
-
-	Reset()
-	assert.Len(t, checkMap, 0, "checks length differs from zero")
 }

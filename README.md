@@ -25,42 +25,44 @@ Additionally, library exports `Measure` function that returns summary status for
 package main
 
 import (
-  "context"
-  "net/http"
-  "time"
+	"context"
+	"net/http"
+	"time"
 
-  "github.com/hellofresh/health-go/v4"
-  healthMysql "github.com/hellofresh/health-go/v4/checks/mysql"
+	"github.com/hellofresh/health-go/v4"
+	healthMysql "github.com/hellofresh/health-go/v4/checks/mysql"
 )
 
 func main() {
-  health.Register(health.Config{
-    Name: "rabbitmq",
-    Timeout: time.Second*5,
-    SkipOnErr: true,
-    Check: func(ctx context.Context) error {
-      // rabbitmq health check implementation goes here
-    },
-  })
+	// add some checks on instance creation
+	h, _ := health.New(health.WithChecks(health.Config{
+		Name:      "rabbitmq",
+		Timeout:   time.Second * 5,
+		SkipOnErr: true,
+		Check: func(ctx context.Context) error {
+			// rabbitmq health check implementation goes here
+			return nil
+		}}, health.Config{
+		Name: "mongodb",
+		Check: func(ctx context.Context) error {
+			// mongo_db health check implementation goes here
+			return nil
+		},
+	},
+	))
 
-  health.Register(health.Config{
-    Name: "mongodb",
-    Check: func(ctx context.Context) error {
-      // mongo_db health check implementation goes here
-    },
-  })
-  
-  health.Register(health.Config{
-    Name:      "mysql",
-    Timeout:   time.Second * 2,
-    SkipOnErr: false,
-    Check: healthMysql.New(healthMysql.Config{
-      DSN: "test:test@tcp(0.0.0.0:31726)/test?charset=utf8",
-    },
-  })
+	// and then add some more if needed
+	h.Register(health.Config{
+		Name:      "mysql",
+		Timeout:   time.Second * 2,
+		SkipOnErr: false,
+		Check: healthMysql.New(healthMysql.Config{
+			DSN: "test:test@tcp(0.0.0.0:31726)/test?charset=utf8",
+		}),
+	})
 
-  http.Handle("/status", health.Handler())
-  http.ListenAndServe(":3000", nil)
+	http.Handle("/status", h.Handler())
+	http.ListenAndServe(":3000", nil)
 }
 ```
 
@@ -69,44 +71,46 @@ func main() {
 package main
 
 import (
-  "context"    
-  "net/http"
-  "time"
+	"context"
+	"net/http"
+	"time"
 
-  "github.com/go-chi/chi"
-  "github.com/hellofresh/health-go/v4"
-  healthMysql "github.com/hellofresh/health-go/v4/checks/mysql"
+	"github.com/go-chi/chi"
+	"github.com/hellofresh/health-go/v4"
+	healthMysql "github.com/hellofresh/health-go/v4/checks/mysql"
 )
 
 func main() {
-  health.Register(health.Config{
-    Name: "rabbitmq",
-    Timeout: time.Second*5,
-    SkipOnErr: true,
-    Check: func(ctx context.Context) error {
-      // rabbitmq health check implementation goes here
-    }),
-  })
+	// add some checks on instance creation
+	h, _ := health.New(health.WithChecks(health.Config{
+		Name:      "rabbitmq",
+		Timeout:   time.Second * 5,
+		SkipOnErr: true,
+		Check: func(ctx context.Context) error {
+			// rabbitmq health check implementation goes here
+			return nil
+		}}, health.Config{
+		Name: "mongodb",
+		Check: func(ctx context.Context) error {
+			// mongo_db health check implementation goes here
+			return nil
+		},
+	},
+	))
 
-  health.Register(health.Config{
-    Name: "mongodb",
-    Check: func(ctx context.Context) error {
-      // mongo_db health check implementation goes here
-    },
-  })
-  
-  health.Register(health.Config{
-    Name:      "mysql",
-    Timeout:   time.Second * 2,
-    SkipOnErr: false,
-    Check: healthMysql.New(healthMysql.Config{
-      DSN:               "test:test@tcp(0.0.0.0:31726)/test?charset=utf8",
-    },
-  })
+	// and then add some more if needed
+	h.Register(health.Config{
+		Name:      "mysql",
+		Timeout:   time.Second * 2,
+		SkipOnErr: false,
+		Check: healthMysql.New(healthMysql.Config{
+			DSN: "test:test@tcp(0.0.0.0:31726)/test?charset=utf8",
+		}),
+	})
 
-  r := chi.NewRouter()
-  r.Get("/status", health.HandlerFunc)
-  http.ListenAndServe(":3000", nil)
+	r := chi.NewRouter()
+	r.Get("/status", h.HandlerFunc)
+	http.ListenAndServe(":3000", nil)
 }
 ```
 
