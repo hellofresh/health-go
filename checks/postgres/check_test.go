@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"os"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -68,6 +69,9 @@ func getDSN(t *testing.T) string {
 
 	pgDSN, ok := os.LookupEnv(pgDSNEnv)
 	require.True(t, ok)
+
+	// "docker-compose port <service> <port>" returns 0.0.0.0:XXXX locally, change it to local port
+	pgDSN = strings.Replace(pgDSN, "0.0.0.0:", "127.0.0.1:", 1)
 
 	return pgDSN
 }
