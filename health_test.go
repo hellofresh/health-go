@@ -6,6 +6,7 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"runtime"
 	"testing"
 	"time"
 
@@ -112,12 +113,14 @@ func TestHealthHandler(t *testing.T) {
 }
 
 func TestHealth_Measure(t *testing.T) {
+	t.Logf("Num CPUs: %d", runtime.NumCPU())
+
 	h, err := New(WithChecks(Config{
 		Name:      "check1",
 		Timeout:   time.Second,
 		SkipOnErr: false,
 		Check: func(context.Context) error {
-			time.Sleep(time.Second * 5)
+			time.Sleep(time.Second * 10)
 			return errors.New("check1")
 		},
 	}, Config{
@@ -125,7 +128,7 @@ func TestHealth_Measure(t *testing.T) {
 		Timeout:   time.Second * 2,
 		SkipOnErr: false,
 		Check: func(context.Context) error {
-			time.Sleep(time.Second * 5)
+			time.Sleep(time.Second * 10)
 			return errors.New("check2")
 		},
 	}))
@@ -138,7 +141,7 @@ func TestHealth_Measure(t *testing.T) {
 	// both checks should run concurrently and should fail with timeout,
 	// so should take not less than 2 sec, but less than 5 that is check time
 	require.GreaterOrEqual(t, elapsed.Milliseconds(), (time.Second * 2).Milliseconds())
-	require.Less(t, elapsed.Milliseconds(), (time.Second * 5).Milliseconds())
+	require.Less(t, elapsed.Milliseconds(), (time.Second * 10).Milliseconds())
 
 	assert.Equal(t, StatusUnavailable, result.Status)
 	assert.Equal(t, string(StatusTimeout), result.Failures["check1"])
