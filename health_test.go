@@ -110,3 +110,37 @@ func TestHealthHandler(t *testing.T) {
 	assert.Equal(t, checkErr, f["rabbitmq"], "body returned wrong status for rabbitmq")
 	assert.Equal(t, string(StatusTimeout), f["snail-service"], "body returned wrong status for snail-service")
 }
+
+func TestHealth_Measure(t *testing.T) {
+	h, err := New(WithChecks(Config{
+		Name:      "check1",
+		Timeout:   time.Second,
+		SkipOnErr: false,
+		Check: func(context.Context) error {
+			time.Sleep(time.Second * 5)
+			return errors.New("check1")
+		},
+	}, Config{
+		Name:      "check2",
+		Timeout:   time.Second * 2,
+		SkipOnErr: false,
+		Check: func(context.Context) error {
+			time.Sleep(time.Second * 5)
+			return errors.New("check2")
+		},
+	}))
+	require.NoError(t, err)
+
+	startedAt := time.Now()
+	result := h.Measure(context.Background())
+	elapsed := time.Since(startedAt)
+
+	// both checks should run concurrently and should fail with timeout,
+	// so should take not less than 2 sec, but less than 5 that is check time
+	require.GreaterOrEqual(t, elapsed.Milliseconds(), (time.Second * 2).Milliseconds())
+	require.Less(t, elapsed.Milliseconds(), (time.Second * 5).Milliseconds())
+
+	assert.Equal(t, StatusUnavailable, result.Status)
+	assert.Equal(t, string(StatusTimeout), result.Failures["check1"])
+	assert.Equal(t, string(StatusTimeout), result.Failures["check2"])
+}
