@@ -13,7 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const pgDSNEnv = "HEALTH_GO_PG_DSN"
+const pgDSNEnv = "HEALTH_GO_PG_PQ_DSN"
 
 func TestNew(t *testing.T) {
 	initDB(t)

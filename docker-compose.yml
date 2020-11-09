@@ -1,7 +1,16 @@
 version: '3'
 services:
 
-  postgres:
+  pg-pq:
+    image: postgres:9.6-alpine
+    ports:
+      - "5432"
+    environment:
+      POSTGRES_USER: test
+      POSTGRES_PASSWORD: test
+      POSTGRES_DB: test
+
+  pg-pgx4:
     image: postgres:9.6-alpine
     ports:
       - "5432"
