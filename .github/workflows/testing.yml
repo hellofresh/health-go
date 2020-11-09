@@ -27,7 +27,21 @@ jobs:
     needs: [lint]
 
     services:
-      postgres:
+      pg-pq:
+        image: postgres:9.6-alpine
+        ports:
+          - "5432"
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      pg-pgx4:
         image: postgres:9.6-alpine
         ports:
           - "5432"
@@ -93,7 +107,8 @@ jobs:
         if: success()
         run: go test -cover ./... -coverprofile=coverage.txt -covermode=atomic
         env:
-          HEALTH_GO_PG_DSN: postgres://test:test@localhost:${{ job.services.postgres.ports[5432] }}/test?sslmode=disable
+          HEALTH_GO_PG_PQ_DSN: postgres://test:test@localhost:${{ job.services.pg-pq.ports[5432] }}/test?sslmode=disable
+          HEALTH_GO_PG_PGX4_DSN: postgres://test:test@localhost:${{ job.services.pg-pgx4.ports[5432] }}/test?sslmode=disable
           HEALTH_GO_MQ_DSN: amqp://guest:guest@localhost:${{ job.services.rabbit.ports[5672] }}/
           HEALTH_GO_MQ_URL: http://guest:guest@localhost:${{ job.services.rabbit.ports[15672] }}/
           HEALTH_GO_RD_DSN: redis://localhost:${{ job.services.redis.ports[6379] }}/
