@@ -1,14 +1,13 @@
-package postgres
+package pgx4
 
 import (
 	"context"
-	"database/sql"
 	"os"
 	"sync"
 	"testing"
 	"time"
 
-	_ "github.com/lib/pq"
+	"github.com/jackc/pgx/v4"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -30,17 +29,18 @@ func TestEnsureConnectionIsClosed(t *testing.T) {
 	initDB(t)
 
 	pgDSN := getDSN(t)
+	ctx := context.Background()
 
-	db, err := sql.Open("postgres", pgDSN)
+	conn, err := pgx.Connect(ctx, getDSN(t))
 	require.NoError(t, err)
 
 	defer func() {
-		err := db.Close()
+		err := conn.Close(ctx)
 		assert.NoError(t, err)
 	}()
 
 	var initialConnections int
-	row := db.QueryRow(`SELECT sum(numbackends) FROM pg_stat_database`)
+	row := conn.QueryRow(ctx, `SELECT sum(numbackends) FROM pg_stat_database`)
 	err = row.Scan(&initialConnections)
 	require.NoError(t, err)
 
@@ -48,7 +48,6 @@ func TestEnsureConnectionIsClosed(t *testing.T) {
 		DSN: pgDSN,
 	})
 
-	ctx := context.Background()
 	for i := 0; i < 10; i++ {
 		err := check(ctx)
 		assert.NoError(t, err)
@@ -56,7 +55,7 @@ func TestEnsureConnectionIsClosed(t *testing.T) {
 	}
 
 	var currentConnections int
-	row = db.QueryRow(`SELECT sum(numbackends) FROM pg_stat_database`)
+	row = conn.QueryRow(ctx, `SELECT sum(numbackends) FROM pg_stat_database`)
 	err = row.Scan(&currentConnections)
 	require.NoError(t, err)
 
@@ -78,16 +77,18 @@ func initDB(t *testing.T) {
 	t.Helper()
 
 	dbInit.Do(func() {
-		db, err := sql.Open("postgres", getDSN(t))
+		ctx := context.Background()
+
+		conn, err := pgx.Connect(ctx, getDSN(t))
 		require.NoError(t, err)
 
 		defer func() {
-			err := db.Close()
+			err := conn.Close(ctx)
 			assert.NoError(t, err)
 		}()
 
-		_, err = db.Exec(`
-CREATE TABLE IF NOT EXISTS test_pq (
+		_, err = conn.Exec(ctx, `
+CREATE TABLE IF NOT EXISTS test_pgx4 (
   id           TEXT NOT NULL PRIMARY KEY,
   secret       TEXT NOT NULL,
   extra        TEXT NOT NULL,
