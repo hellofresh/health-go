@@ -9,6 +9,10 @@ import (
 	"runtime"
 	"sync"
 	"time"
+
+	"go.opentelemetry.io/otel/api/trace"
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/label"
 )
 
 // Status type represents health status
@@ -68,6 +72,9 @@ type (
 	Health struct {
 		mu     sync.Mutex
 		checks map[string]Config
+
+		tp                  trace.TracerProvider
+		instrumentationName string
 	}
 
 	checkResponse struct {
@@ -81,6 +88,7 @@ type (
 func New(opts ...Option) (*Health, error) {
 	h := &Health{
 		checks: make(map[string]Config),
+		tp:     trace.NoopTracerProvider(),
 	}
 
 	for _, o := range opts {
@@ -139,15 +147,34 @@ func (h *Health) HandlerFunc(w http.ResponseWriter, r *http.Request) {
 	w.Write(data)
 }
 
+type checkSpan struct {
+	ctx  context.Context
+	span trace.Span
+}
+
+func newCheckSpan(ctx context.Context, tracer trace.Tracer, name string) checkSpan {
+	var cs checkSpan
+	cs.ctx, cs.span = tracer.Start(ctx, name)
+	return cs
+}
+
 // Measure runs all the registered health checks and returns summary status
 func (h *Health) Measure(ctx context.Context) Check {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 
+	tracer := h.tp.Tracer(h.instrumentationName)
+
+	ctx, span := tracer.Start(ctx, "health.Measure")
+	defer span.End()
+
 	status := StatusOK
 	total := len(h.checks)
 	failures := make(map[string]string)
 	resChan := make(chan checkResponse, total)
+	checkSpans := make(map[string]checkSpan)
+
+	span.SetAttributes(label.Int("checks", total))
 
 	var wg sync.WaitGroup
 	wg.Add(total)
@@ -159,6 +186,8 @@ func (h *Health) Measure(ctx context.Context) Check {
 	}()
 
 	for _, c := range h.checks {
+		checkSpans[c.Name] = newCheckSpan(ctx, tracer, c.Name)
+
 		go func(c Config) {
 			defer wg.Done()
 
@@ -174,16 +203,30 @@ func (h *Health) Measure(ctx context.Context) Check {
 			case <-time.After(c.Timeout):
 				failures[c.Name] = string(StatusTimeout)
 				status = getAvailability(status, c.SkipOnErr)
+
+				cs := checkSpans[c.Name]
+				cs.span.SetStatus(codes.Error, string(StatusTimeout))
+				cs.span.End()
+
 				break loop
 			case res := <-resChan:
+				cs := checkSpans[res.name]
+
 				if res.err != nil {
 					failures[res.name] = res.err.Error()
 					status = getAvailability(status, res.skipOnErr)
+
+					cs.span.RecordError(cs.ctx, res.err)
 				}
+
+				cs.span.End()
+
 				break loop
 			}
 		}
 	}
+
+	span.SetAttributes(label.String("status", string(status)))
 
 	return newCheck(status, failures)
 }
