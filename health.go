@@ -10,9 +10,9 @@ import (
 	"sync"
 	"time"
 
-	"go.opentelemetry.io/otel/api/trace"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/label"
+	"go.opentelemetry.io/otel/trace"
 )
 
 // Status type represents health status
@@ -88,7 +88,7 @@ type (
 func New(opts ...Option) (*Health, error) {
 	h := &Health{
 		checks: make(map[string]Config),
-		tp:     trace.NoopTracerProvider(),
+		tp:     trace.NewNoopTracerProvider(),
 	}
 
 	for _, o := range opts {
@@ -216,7 +216,7 @@ func (h *Health) Measure(ctx context.Context) Check {
 					failures[res.name] = res.err.Error()
 					status = getAvailability(status, res.skipOnErr)
 
-					cs.span.RecordError(cs.ctx, res.err)
+					cs.span.RecordError(res.err)
 				}
 
 				cs.span.End()

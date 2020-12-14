@@ -17,6 +17,6 @@ test:
 
 lint:
 	@echo "$(OK_COLOR)==> Linting with golangci-lint$(NO_COLOR)"
-	@docker run --rm -v $(pwd):/app -w /app golangci/golangci-lint:v1.27.0 golangci-lint run -v
+	@docker run --rm -v $(pwd):/app -w /app golangci/golangci-lint:v1.33.0 golangci-lint run -v
 
 .PHONY: test lint
