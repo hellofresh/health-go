@@ -3,7 +3,7 @@ package health
 import (
 	"fmt"
 
-	"go.opentelemetry.io/otel/api/trace"
+	"go.opentelemetry.io/otel/trace"
 )
 
 // Option is the health-container options type
