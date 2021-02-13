@@ -13,6 +13,7 @@ test:
 		HEALTH_GO_MG_DSN="mongodb://`docker-compose port mongo 27017`/" \
 		HEALTH_GO_MS_DSN="test:test@tcp(`docker-compose port mysql 3306`)/test?charset=utf8" \
 		HEALTH_GO_HTTP_URL="http://`docker-compose port http 8080`/status" \
+		HEALTH_GO_MD_DSN="memcached://localhost:${{ job.services.memcached.ports[11211] }}/" \
 		go test -cover ./... -coverprofile=coverage.txt -covermode=atomic
 
 lint:
