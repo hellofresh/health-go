@@ -2,9 +2,10 @@ package memcached
 
 import (
 	"context"
-	"github.com/stretchr/testify/require"
 	"os"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 const rdDSNEnv = "HEALTH_GO_MD_DSN"

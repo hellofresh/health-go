@@ -3,8 +3,9 @@ package memcached
 import (
 	"context"
 	"fmt"
-	"github.com/bradfitz/gomemcache/memcache"
 	"strings"
+
+	"github.com/bradfitz/gomemcache/memcache"
 )
 
 // Config is the Memcached checker configuration settings container.
