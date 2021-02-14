@@ -45,6 +45,11 @@ services:
       MYSQL_USER: test
       MYSQL_PASSWORD: test
 
+  memcached:
+    image: memcached:1.6.9-alpine
+    ports:
+      - "11211"
+
   http:
     image: pierreprinetti/apimock:latest
     ports:
