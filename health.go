@@ -114,7 +114,7 @@ func (h *Health) Register(c Config) error {
 	defer h.mu.Unlock()
 
 	if _, ok := h.checks[c.Name]; ok {
-		return fmt.Errorf("health check %s is already registered", c.Name)
+		return fmt.Errorf("health check %q is already registered", c.Name)
 	}
 
 	h.checks[c.Name] = c

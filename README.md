@@ -12,6 +12,7 @@
   * MongoDB
   * MySQL
   * gRPC
+  * Memcached
 
 ## Usage
 
