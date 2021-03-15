@@ -10,8 +10,8 @@ import (
 	"sync"
 	"time"
 
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
-	"go.opentelemetry.io/otel/label"
 	"go.opentelemetry.io/otel/trace"
 )
 
@@ -174,7 +174,7 @@ func (h *Health) Measure(ctx context.Context) Check {
 	resChan := make(chan checkResponse, total)
 	checkSpans := make(map[string]checkSpan)
 
-	span.SetAttributes(label.Int("checks", total))
+	span.SetAttributes(attribute.Int("checks", total))
 
 	var wg sync.WaitGroup
 	wg.Add(total)
@@ -226,7 +226,7 @@ func (h *Health) Measure(ctx context.Context) Check {
 		}
 	}
 
-	span.SetAttributes(label.String("status", string(status)))
+	span.SetAttributes(attribute.String("status", string(status)))
 
 	return newCheck(status, failures)
 }
