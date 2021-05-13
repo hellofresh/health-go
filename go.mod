@@ -11,7 +11,7 @@ require (
 	github.com/streadway/amqp v1.0.0
 	github.com/stretchr/testify v1.7.0
 	go.mongodb.org/mongo-driver v1.4.1
-	go.opentelemetry.io/otel v0.19.0
-	go.opentelemetry.io/otel/trace v0.19.0
+	go.opentelemetry.io/otel v0.20.0
+	go.opentelemetry.io/otel/trace v0.20.0
 	google.golang.org/grpc v1.36.0
 )
