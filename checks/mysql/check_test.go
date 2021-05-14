@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"os"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -71,6 +72,9 @@ func getDSN(t *testing.T) string {
 
 	mysqlDSN, ok := os.LookupEnv(mysqlDSNEnv)
 	require.True(t, ok)
+
+	// "docker-compose port <service> <port>" returns 0.0.0.0:XXXX locally, change it to local port
+	mysqlDSN = strings.Replace(mysqlDSN, "0.0.0.0:", "127.0.0.1:", 1)
 
 	return mysqlDSN
 }

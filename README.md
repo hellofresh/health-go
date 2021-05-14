@@ -1,7 +1,6 @@
 # health-go
 [![Go Report Card](https://goreportcard.com/badge/github.com/hellofresh/health-go)](https://goreportcard.com/report/github.com/hellofresh/health-go)
 [![Go Doc](https://godoc.org/github.com/hellofresh/health-go?status.svg)](https://godoc.org/github.com/hellofresh/health-go)
-[![Coverage Status](https://codecov.io/gh/hellofresh/health-go/branch/master/graph/badge.svg)](https://codecov.io/gh/hellofresh/health-go)
 
 * Exposes an HTTP handler that retrieves health status of the application
 * Implements some generic checkers for the following services:
@@ -18,7 +17,8 @@
 
 The library exports `Handler` and `HandlerFunc` functions which are fully compatible with `net/http`.
 
-Additionally, library exports `Measure` function that returns summary status for all the registered health checks, so it can be used in non-HTTP environments.
+Additionally, library exports `Measure` function that returns summary status for all the registered health checks,
+so it can be used in non-HTTP environments.
 
 ### Handler
 

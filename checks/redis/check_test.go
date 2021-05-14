@@ -3,6 +3,7 @@ package redis
 import (
 	"context"
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -24,6 +25,9 @@ func getDSN(t *testing.T) string {
 
 	redisDSN, ok := os.LookupEnv(rdDSNEnv)
 	require.True(t, ok)
+
+	// "docker-compose port <service> <port>" returns 0.0.0.0:XXXX locally, change it to local port
+	redisDSN = strings.Replace(redisDSN, "0.0.0.0:", "127.0.0.1:", 1)
 
 	return redisDSN
 }

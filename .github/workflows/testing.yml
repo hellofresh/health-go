@@ -17,16 +17,12 @@ jobs:
       - name: Check out code
         uses: actions/checkout@v2
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@v1
-        env:
-          ACTIONS_ALLOW_UNSECURE_COMMANDS: "true"
-        with:
-          version: v1.33
+        uses: golangci/golangci-lint-action@v2
 
   test:
     name: Test
     runs-on: ubuntu-latest
-    needs: [lint]
+    needs: [ lint ]
 
     services:
       pg-pq:
@@ -62,6 +58,11 @@ jobs:
         ports:
           - "5672"
           - "15672"
+        options: >-
+          --health-cmd "rabbitmqctl status"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
       redis:
         image: redis:3.2-alpine
@@ -77,6 +78,11 @@ jobs:
         image: mongo:3
         ports:
           - "27017"
+        options: >-
+          --health-cmd "mongo localhost:27017/test --quiet --eval 'quit(db.runCommand({ ping: 1 }).ok ? 0 : 2)'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
       mysql:
         image: mysql:5.7
@@ -105,7 +111,6 @@ jobs:
         ports:
           - "11211"
 
-
     steps:
       - name: Set up Go
         uses: actions/setup-go@v2
@@ -124,10 +129,3 @@ jobs:
           HEALTH_GO_MS_DSN: test:test@tcp(localhost:${{ job.services.mysql.ports[3306] }})/test?charset=utf8
           HEALTH_GO_HTTP_URL: http://localhost:${{ job.services.http.ports[8080] }}/status
           HEALTH_GO_MD_DSN: memcached://localhost:${{ job.services.memcached.ports[11211] }}/
-
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v1
-        if: success()
-        with:
-          file: ./coverage.txt
-          fail_ci_if_error: false
