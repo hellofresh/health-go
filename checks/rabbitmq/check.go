@@ -127,7 +127,7 @@ func New(config Config) func(ctx context.Context) error {
 				return
 			case <-ctx.Done():
 				checkErr = fmt.Errorf("RabbitMQ health check failed due "+
-					"to health check listener disconnect: %s", ctx.Err())
+					"to health check listener disconnect: %w", ctx.Err())
 				return
 			case <-done:
 				return
