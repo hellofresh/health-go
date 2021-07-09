@@ -14,6 +14,7 @@ const (
 )
 
 var (
+	defaultDialTimeout    = 200 * time.Millisecond
 	defaultConsumeTimeout = time.Second * 3
 )
 
@@ -34,6 +35,9 @@ type (
 		// ConsumeTimeout is the duration that health check will try to consume published test message.
 		// If not set - 3 seconds
 		ConsumeTimeout time.Duration
+		// DialTimeout is the duration that health check will try to dial to RabbitMQ.
+		// If not set - 200 milliseconds.
+		DialTimeout time.Duration
 	}
 )
 
@@ -49,7 +53,9 @@ func New(config Config) func(ctx context.Context) error {
 	(&config).defaults()
 
 	return func(ctx context.Context) (checkErr error) {
-		conn, err := amqp.Dial(config.DSN)
+		conn, err := amqp.DialConfig(config.DSN, amqp.Config{
+			Dial: amqp.DefaultDial(config.DialTimeout),
+		})
 		if err != nil {
 			checkErr = fmt.Errorf("RabbitMQ health check failed on dial phase: %w", err)
 			return
@@ -119,6 +125,10 @@ func New(config Config) func(ctx context.Context) error {
 			case <-time.After(config.ConsumeTimeout):
 				checkErr = fmt.Errorf("RabbitMQ health check failed due to consume timeout: %w", err)
 				return
+			case <-ctx.Done():
+				checkErr = fmt.Errorf("RabbitMQ health check failed due "+
+					"to health check listener disconnect: %s", ctx.Err())
+				return
 			case <-done:
 				return
 			}
@@ -145,5 +155,8 @@ func (c *Config) defaults() {
 
 	if c.ConsumeTimeout == 0 {
 		c.ConsumeTimeout = defaultConsumeTimeout
+	}
+	if c.DialTimeout == 0 {
+		c.DialTimeout = defaultDialTimeout
 	}
 }
