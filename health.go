@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
 )
 
@@ -80,6 +79,7 @@ type (
 	checkResponse struct {
 		name      string
 		skipOnErr bool
+		timeout   bool
 		err       error
 	}
 )
@@ -180,9 +180,25 @@ func (h *Health) Measure(ctx context.Context) Check {
 	wg.Add(total)
 
 	go func() {
-		defer close(resChan)
+		for {
+			res, active := <-resChan
+			if !active {
+				return
+			}
 
-		wg.Wait()
+			if res.timeout {
+				failures[res.name] = string(StatusTimeout)
+				status = getAvailability(status, res.skipOnErr)
+				continue
+			}
+
+			if res.err == nil {
+				continue
+			}
+
+			failures[res.name] = res.err.Error()
+			status = getAvailability(status, res.skipOnErr)
+		}
 	}()
 
 	for _, c := range h.checks {
@@ -191,40 +207,26 @@ func (h *Health) Measure(ctx context.Context) Check {
 		go func(c Config) {
 			defer wg.Done()
 
-			select {
-			case resChan <- checkResponse{c.Name, c.SkipOnErr, c.Check(ctx)}:
-			default:
-			}
-		}(c)
+			ctx, cancel := context.WithTimeout(ctx, c.Timeout)
+			defer cancel()
 
-	loop:
-		for {
+			checkResult := make(chan error)
+			go func() {
+				checkResult <- c.Check(ctx)
+				close(checkResult)
+			}()
+
 			select {
 			case <-time.After(c.Timeout):
-				failures[c.Name] = string(StatusTimeout)
-				status = getAvailability(status, c.SkipOnErr)
-
-				cs := checkSpans[c.Name]
-				cs.span.SetStatus(codes.Error, string(StatusTimeout))
-				cs.span.End()
-
-				break loop
-			case res := <-resChan:
-				cs := checkSpans[res.name]
-
-				if res.err != nil {
-					failures[res.name] = res.err.Error()
-					status = getAvailability(status, res.skipOnErr)
-
-					cs.span.RecordError(res.err)
-				}
-
-				cs.span.End()
-
-				break loop
+				resChan <- checkResponse{c.Name, c.SkipOnErr, true, nil}
+			case err := <-checkResult:
+				resChan <- checkResponse{c.Name, c.SkipOnErr, false, err}
 			}
-		}
+		}(c)
 	}
+
+	wg.Wait()
+	close(resChan)
 
 	span.SetAttributes(attribute.String("status", string(status)))
 
