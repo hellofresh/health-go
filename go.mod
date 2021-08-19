@@ -8,7 +8,7 @@ require (
 	github.com/go-sql-driver/mysql v1.6.0
 	github.com/jackc/pgx/v4 v4.11.0
 	github.com/lib/pq v1.10.0
-	github.com/streadway/amqp v1.0.0
+	github.com/rabbitmq/amqp091-go v0.0.0-20210812094702-b2a427eb7d17
 	github.com/stretchr/testify v1.7.0
 	go.mongodb.org/mongo-driver v1.7.1
 	go.opentelemetry.io/otel v1.0.0-RC2

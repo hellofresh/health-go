@@ -6,7 +6,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/streadway/amqp"
+	"github.com/rabbitmq/amqp091-go"
 )
 
 const (
@@ -53,8 +53,8 @@ func New(config Config) func(ctx context.Context) error {
 	(&config).defaults()
 
 	return func(ctx context.Context) (checkErr error) {
-		conn, err := amqp.DialConfig(config.DSN, amqp.Config{
-			Dial: amqp.DefaultDial(config.DialTimeout),
+		conn, err := amqp091.DialConfig(config.DSN, amqp091.Config{
+			Dial: amqp091.DefaultDial(config.DialTimeout),
 		})
 		if err != nil {
 			checkErr = fmt.Errorf("RabbitMQ health check failed on dial phase: %w", err)
@@ -114,7 +114,7 @@ func New(config Config) func(ctx context.Context) error {
 			}
 		}()
 
-		p := amqp.Publishing{Body: []byte(time.Now().Format(time.RFC3339Nano))}
+		p := amqp091.Publishing{Body: []byte(time.Now().Format(time.RFC3339Nano))}
 		if err := ch.Publish(config.Exchange, config.RoutingKey, false, false, p); err != nil {
 			checkErr = fmt.Errorf("RabbitMQ health check failed during publishing: %w", err)
 			return
