@@ -7,10 +7,11 @@ require (
 	github.com/go-redis/redis/v8 v8.10.0
 	github.com/go-sql-driver/mysql v1.6.0
 	github.com/jackc/pgx/v4 v4.11.0
+	github.com/klauspost/compress v1.13.5 // indirect
 	github.com/lib/pq v1.10.0
 	github.com/streadway/amqp v1.0.0
 	github.com/stretchr/testify v1.7.0
-	go.mongodb.org/mongo-driver v1.7.1
+	go.mongodb.org/mongo-driver v1.7.2
 	go.opentelemetry.io/otel v1.0.0-RC3
 	go.opentelemetry.io/otel/internal/metric v0.23.0 // indirect
 	go.opentelemetry.io/otel/trace v1.0.0-RC3
