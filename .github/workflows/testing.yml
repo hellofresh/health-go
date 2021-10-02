@@ -111,6 +111,13 @@ jobs:
         ports:
           - "11211"
 
+      neo4j:
+        image: neo4j:4.3.5-community
+        ports:
+          - "7687"
+        env:
+          NEO4J_AUTH: "none"
+
     steps:
       - name: Set up Go
         uses: actions/setup-go@v2
@@ -129,3 +136,4 @@ jobs:
           HEALTH_GO_MS_DSN: test:test@tcp(localhost:${{ job.services.mysql.ports[3306] }})/test?charset=utf8
           HEALTH_GO_HTTP_URL: http://localhost:${{ job.services.http.ports[8080] }}/status
           HEALTH_GO_MD_DSN: memcached://localhost:${{ job.services.memcached.ports[11211] }}/
+          HEALTH_GO_N4J_DSN: neo4j://localhost:${{ job.services.neo4j.ports[7687] }}
