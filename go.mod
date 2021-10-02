@@ -8,8 +8,8 @@ require (
 	github.com/go-redis/redis/v8 v8.11.3
 	github.com/go-sql-driver/mysql v1.6.0
 	github.com/jackc/pgx/v4 v4.13.0
-	github.com/lib/pq v1.10.2
-	github.com/streadway/amqp v1.0.0
+	github.com/lib/pq v1.10.3
+	github.com/rabbitmq/amqp091-go v1.1.0
 	github.com/stretchr/testify v1.7.0
 	go.mongodb.org/mongo-driver v1.7.2
 	go.opentelemetry.io/otel v1.0.1
