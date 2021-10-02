@@ -24,7 +24,7 @@ func New(config Config) func(ctx context.Context) error {
 	memcachedDSN := strings.TrimPrefix(config.DSN, "memcached://")
 	memcachedDSN = strings.TrimSuffix(memcachedDSN, "/")
 
-	return func(ctx context.Context) error {
+	return func(_ context.Context) error {
 		mdb := memcache.New(memcachedDSN)
 
 		err := mdb.Ping()
