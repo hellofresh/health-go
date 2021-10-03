@@ -10,10 +10,7 @@ import (
 )
 
 const (
-	defaultExchange = "health_check"
-)
-
-var (
+	defaultExchange       = "health_check"
 	defaultDialTimeout    = 200 * time.Millisecond
 	defaultConsumeTimeout = time.Second * 3
 )
