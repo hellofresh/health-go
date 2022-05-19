@@ -7,6 +7,7 @@ require (
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
 	github.com/go-redis/redis/v8 v8.11.3
 	github.com/go-sql-driver/mysql v1.6.0
+	github.com/influxdata/influxdb-client-go/v2 v2.8.2 // indirect
 	github.com/jackc/pgx/v4 v4.13.0
 	github.com/lib/pq v1.10.3
 	github.com/rabbitmq/amqp091-go v1.1.0
