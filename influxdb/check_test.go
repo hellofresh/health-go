@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const InfluxDbUrlEnv = "HEALTH_GO_INFLUXDB_URL"
+const InfluxDbURLEnv = "HEALTH_GO_INFLUXDB_URL"
 
 func TestNew(t *testing.T) {
 	check := New(Config{
@@ -31,7 +31,7 @@ func TestNewWithError(t *testing.T) {
 func getURL(t *testing.T) string {
 	t.Helper()
 
-	url, ok := os.LookupEnv(InfluxDbUrlEnv)
+	url, ok := os.LookupEnv(InfluxDbURLEnv)
 
 	require.True(t, ok)
 

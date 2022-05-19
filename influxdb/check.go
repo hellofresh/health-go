@@ -10,8 +10,8 @@ import (
 	"github.com/influxdata/influxdb-client-go/v2/domain"
 )
 
+// Config stores InfluxDB API host and possibly parameters.
 type Config struct {
-	// URL is an InfluxDB API host
 	URL string
 }
 
