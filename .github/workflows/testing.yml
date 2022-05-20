@@ -111,6 +111,16 @@ jobs:
         ports:
           - "11211"
 
+      influxdb:
+        image: influxdb:1.8-alpine
+        ports:
+          - "8086"
+        env:
+          DOCKER_INFLUXDB_INIT_USERNAME: test
+          DOCKER_INFLUXDB_INIT_PASSWORD: test
+          DOCKER_INFLUXDB_INIT_ORG: test
+          DOCKER_INFLUXDB_INIT_BUCKET: test
+
     steps:
       - name: Set up Go
         uses: actions/setup-go@v2
@@ -128,4 +138,5 @@ jobs:
           HEALTH_GO_MG_DSN: mongodb://localhost:${{ job.services.mongo.ports[27017] }}/
           HEALTH_GO_MS_DSN: test:test@tcp(localhost:${{ job.services.mysql.ports[3306] }})/test?charset=utf8
           HEALTH_GO_HTTP_URL: http://localhost:${{ job.services.http.ports[8080] }}/status
+          HEALTH_GO_INFLUXDB_URL: http://localhost:${{ job.services.influxdb.ports[8086] }}
           HEALTH_GO_MD_DSN: memcached://localhost:${{ job.services.memcached.ports[11211] }}/
