@@ -61,6 +61,8 @@ services:
       retries: 5
 
   mysql:
+   # uncomment to use on ARM chip
+   # platform: linux/x86_64 
     image: mysql:5.7
     ports:
       - "3306"
@@ -86,3 +88,15 @@ services:
       - "8080"
     environment:
       HOST: ":8080"
+
+  influxdb:
+   # uncomment to use on ARM chip
+   # platform: linux/x86_64 
+    image: influxdb:1.8-alpine
+    ports:
+      - "8086"
+    environment:
+      DOCKER_INFLUXDB_INIT_USERNAME: test
+      DOCKER_INFLUXDB_INIT_PASSWORD: test
+      DOCKER_INFLUXDB_INIT_ORG: test
+      DOCKER_INFLUXDB_INIT_BUCKET: test
