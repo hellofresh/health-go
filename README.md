@@ -13,6 +13,7 @@
   * MySQL
   * gRPC
   * Memcached
+  * InfluxDB
 
 ## Usage
 
