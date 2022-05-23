@@ -1,4 +1,5 @@
 # health-go
+
 [![Go Report Card](https://goreportcard.com/badge/github.com/hellofresh/health-go)](https://goreportcard.com/report/github.com/hellofresh/health-go)
 [![Go Doc](https://godoc.org/github.com/hellofresh/health-go?status.svg)](https://godoc.org/github.com/hellofresh/health-go)
 
@@ -12,6 +13,7 @@
   * MySQL
   * gRPC
   * Memcached
+  * InfluxDB
 
 ## Usage
 

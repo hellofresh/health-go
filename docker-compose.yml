@@ -1,14 +1,17 @@
+---
 version: '3'
 services:
 
   pg-pq:
-    image: postgres:9.6-alpine
+    image: postgres:10
     ports:
       - "5432"
     environment:
       POSTGRES_USER: test
       POSTGRES_PASSWORD: test
       POSTGRES_DB: test
+    tmpfs:
+      - /var/lib/postgresql/data
     healthcheck:
       test: [ "CMD", "pg_isready" ]
       interval: 10s
@@ -16,13 +19,15 @@ services:
       retries: 5
 
   pg-pgx4:
-    image: postgres:9.6-alpine
+    image: postgres:10
     ports:
       - "5432"
     environment:
       POSTGRES_USER: test
       POSTGRES_PASSWORD: test
       POSTGRES_DB: test
+    tmpfs:
+      - /var/lib/postgresql/data
     healthcheck:
       test: [ "CMD", "pg_isready" ]
       interval: 10s
@@ -54,6 +59,9 @@ services:
     image: mongo:3
     ports:
       - "27017"
+    tmpfs:
+      - /var/lib/mongodb
+      - /data/db/
     healthcheck:
       test: "mongo localhost:27017/test --quiet --eval 'quit(db.runCommand({ ping: 1 }).ok ? 0 : 2)'"
       interval: 10s
@@ -61,9 +69,9 @@ services:
       retries: 5
 
   mysql:
-   # uncomment to use on ARM chip
-   # platform: linux/x86_64 
-    image: mysql:5.7
+    # uncomment to use on ARM chip
+    # platform: linux/x86_64
+    image: mysql:8
     ports:
       - "3306"
     environment:
@@ -71,6 +79,8 @@ services:
       MYSQL_DATABASE: test
       MYSQL_USER: test
       MYSQL_PASSWORD: test
+    tmpfs:
+      - /var/lib/mysql
     healthcheck:
       test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
       interval: 10s
@@ -90,8 +100,8 @@ services:
       HOST: ":8080"
 
   influxdb:
-   # uncomment to use on ARM chip
-   # platform: linux/x86_64 
+    # uncomment to use on ARM chip
+    # platform: linux/x86_64
     image: influxdb:1.8-alpine
     ports:
       - "8086"

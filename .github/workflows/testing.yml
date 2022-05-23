@@ -13,130 +13,50 @@ jobs:
   lint:
     name: Lint
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
-      - name: Check out code
-        uses: actions/checkout@v2
-      - name: golangci-lint
-        uses: golangci/golangci-lint-action@v2
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v3
+        with:
+          go-version: 1.17
+      - uses: golangci/golangci-lint-action@v3
 
   test:
     name: Test
     runs-on: ubuntu-latest
-    needs: [ lint ]
-
-    services:
-      pg-pq:
-        image: postgres:9.6-alpine
-        ports:
-          - "5432"
-        env:
-          POSTGRES_USER: test
-          POSTGRES_PASSWORD: test
-          POSTGRES_DB: test
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
-      pg-pgx4:
-        image: postgres:9.6-alpine
-        ports:
-          - "5432"
-        env:
-          POSTGRES_USER: test
-          POSTGRES_PASSWORD: test
-          POSTGRES_DB: test
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
-      rabbit:
-        image: rabbitmq:3.6-management-alpine
-        ports:
-          - "5672"
-          - "15672"
-        options: >-
-          --health-cmd "rabbitmqctl status"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
-      redis:
-        image: redis:3.2-alpine
-        ports:
-          - "6379"
-        options: >-
-          --health-cmd "redis-cli ping"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
-      mongo:
-        image: mongo:3
-        ports:
-          - "27017"
-        options: >-
-          --health-cmd "mongo localhost:27017/test --quiet --eval 'quit(db.runCommand({ ping: 1 }).ok ? 0 : 2)'"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
-      mysql:
-        image: mysql:5.7
-        ports:
-          - "3306"
-        env:
-          MYSQL_ROOT_PASSWORD: test
-          MYSQL_DATABASE: test
-          MYSQL_USER: test
-          MYSQL_PASSWORD: test
-        options: >-
-          --health-cmd "mysqladmin ping -h 127.0.0.1 -u $$MYSQL_USER --password=$$MYSQL_PASSWORD"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
-      http:
-        image: pierreprinetti/apimock:latest
-        ports:
-          - "8080"
-        env:
-          HOST: ":8080"
-
-      memcached:
-        image: memcached:1.6.9-alpine
-        ports:
-          - "11211"
-
-      influxdb:
-        image: influxdb:1.8-alpine
-        ports:
-          - "8086"
-        env:
-          DOCKER_INFLUXDB_INIT_USERNAME: test
-          DOCKER_INFLUXDB_INIT_PASSWORD: test
-          DOCKER_INFLUXDB_INIT_ORG: test
-          DOCKER_INFLUXDB_INIT_BUCKET: test
+    timeout-minutes: 10
+    strategy:
+      matrix:
+        go-version: [ 1.17, 1.18 ]
 
     steps:
-      - name: Set up Go
-        uses: actions/setup-go@v2
-      - name: Check out code
-        uses: actions/checkout@v2
-      - name: Run tests
-        if: success()
-        run: go test -cover ./... -coverprofile=coverage.txt -covermode=atomic
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v3
+        with:
+          go-version: ${{ matrix.go-version }}
+
+      - name: Install Task
+        uses: arduino/setup-task@v1
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install docker-compose v2
+        shell: bash
         env:
-          HEALTH_GO_PG_PQ_DSN: postgres://test:test@localhost:${{ job.services.pg-pq.ports[5432] }}/test?sslmode=disable
-          HEALTH_GO_PG_PGX4_DSN: postgres://test:test@localhost:${{ job.services.pg-pgx4.ports[5432] }}/test?sslmode=disable
-          HEALTH_GO_MQ_DSN: amqp://guest:guest@localhost:${{ job.services.rabbit.ports[5672] }}/
-          HEALTH_GO_MQ_URL: http://guest:guest@localhost:${{ job.services.rabbit.ports[15672] }}/
-          HEALTH_GO_RD_DSN: redis://localhost:${{ job.services.redis.ports[6379] }}/
-          HEALTH_GO_MG_DSN: mongodb://localhost:${{ job.services.mongo.ports[27017] }}/
-          HEALTH_GO_MS_DSN: test:test@tcp(localhost:${{ job.services.mysql.ports[3306] }})/test?charset=utf8
-          HEALTH_GO_HTTP_URL: http://localhost:${{ job.services.http.ports[8080] }}/status
-          HEALTH_GO_INFLUXDB_URL: http://localhost:${{ job.services.influxdb.ports[8086] }}
-          HEALTH_GO_MD_DSN: memcached://localhost:${{ job.services.memcached.ports[11211] }}/
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release -R docker/compose download -p docker-compose-linux-x86_64
+          mv -f docker-compose-linux-x86_64 docker-compose
+          sudo mv /usr/local/bin/docker-compose /usr/local/bin/docker-compose-v2
+          sudo install docker-compose /usr/local/bin/
+          docker-compose --version
+
+      - run: task test
+
+  tets-summary:
+    name: Test
+    needs: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - run: echo "All good!"
