@@ -52,6 +52,8 @@ type (
 		Failures map[string]string `json:"failures,omitempty"`
 		// System holds information of the go process.
 		System `json:"system"`
+		// Component holds information on the component for which checks are made
+		Component `json:"component"`
 	}
 
 	// System runtime variables about the go process.
@@ -68,6 +70,14 @@ type (
 		AllocBytes int `json:"alloc_bytes"`
 	}
 
+	// Component descriptive values about the component for which checks are made
+	Component struct {
+		// Name is the name of the component.
+		Name string `json:"name"`
+		// Version is the component version.
+		Version string `json:"version"`
+	}
+
 	// Health is the health-checks container
 	Health struct {
 		mu     sync.Mutex
@@ -75,6 +85,8 @@ type (
 
 		tp                  trace.TracerProvider
 		instrumentationName string
+
+		component Component
 	}
 
 	checkResponse struct {
@@ -228,15 +240,16 @@ func (h *Health) Measure(ctx context.Context) Check {
 
 	span.SetAttributes(attribute.String("status", string(status)))
 
-	return newCheck(status, failures)
+	return newCheck(h.component, status, failures)
 }
 
-func newCheck(s Status, failures map[string]string) Check {
+func newCheck(c Component, s Status, failures map[string]string) Check {
 	return Check{
 		Status:    s,
 		Timestamp: time.Now(),
 		Failures:  failures,
 		System:    newSystemMetrics(),
+		Component: c,
 	}
 }
 
