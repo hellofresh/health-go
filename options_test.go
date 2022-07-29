@@ -54,3 +54,20 @@ func TestWithTracerProvider(t *testing.T) {
 	assert.Same(t, tp, h2.tp)
 	assert.Equal(t, instrumentationName, h2.instrumentationName)
 }
+
+func TestWithComponent(t *testing.T) {
+	h1, err := New()
+	require.NoError(t, err)
+	assert.Empty(t, h1.component.Name)
+	assert.Empty(t, h1.component.Version)
+
+	c := Component{
+		Name:    "test",
+		Version: "1.0",
+	}
+
+	h2, err := New(WithComponent(c))
+	require.NoError(t, err)
+	assert.Equal(t, "test", h2.component.Name)
+	assert.Equal(t, "1.0", h2.component.Version)
+}

@@ -38,7 +38,10 @@ import (
 
 func main() {
 	// add some checks on instance creation
-	h, _ := health.New(health.WithChecks(health.Config{
+	h, _ := health.New(health.WithComponent(health.Component{
+      Name:    "myservice",
+      Version: "v1.0",
+    }), health.WithChecks(health.Config{
 		Name:      "rabbitmq",
 		Timeout:   time.Second * 5,
 		SkipOnErr: true,
@@ -85,7 +88,10 @@ import (
 
 func main() {
 	// add some checks on instance creation
-	h, _ := health.New(health.WithChecks(health.Config{
+	h, _ := health.New(health.WithComponent(health.Component{
+      Name:    "myservice",
+      Version: "v1.0",
+    }), health.WithChecks(health.Config{
 		Name:      "rabbitmq",
 		Timeout:   time.Second * 5,
 		SkipOnErr: true,
@@ -142,6 +148,10 @@ HTTP/1.1 200 OK
     "total_alloc_bytes": 21321,
     "heap_objects_count": 21323,
     "alloc_bytes": 234523
+  },
+  "component": {
+    "name": "myservice",
+    "version": "v1.0"
   }
 }
 ```
@@ -160,6 +170,10 @@ HTTP/1.1 200 OK
     "total_alloc_bytes": 21321,
     "heap_objects_count": 21323,
     "alloc_bytes": 234523
+  },
+  "component": {
+    "name": "myservice",
+    "version": "v1.0"
   }
 }
 ```
@@ -178,6 +192,10 @@ HTTP/1.1 503 Service Unavailable
     "total_alloc_bytes": 21321,
     "heap_objects_count": 21323,
     "alloc_bytes": 234523
+  },
+  "component": {
+    "name": "myservice",
+    "version": "v1.0"
   }
 }
 ```

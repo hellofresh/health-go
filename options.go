@@ -32,3 +32,12 @@ func WithTracerProvider(tp trace.TracerProvider, instrumentationName string) Opt
 		return nil
 	}
 }
+
+// WithComponent sets the component description of the component to which this check refer
+func WithComponent(component Component) Option {
+	return func(h *Health) error {
+		h.component = component
+
+		return nil
+	}
+}
