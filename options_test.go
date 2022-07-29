@@ -61,11 +61,12 @@ func TestWithComponent(t *testing.T) {
 	assert.Empty(t, h1.component.Name)
 	assert.Empty(t, h1.component.Version)
 
-	c := new(Component)
-	c.Name = "test"
-	c.Version = "1.0"
+	c := Component{
+		Name:    "test",
+		Version: "1.0",
+	}
 
-	h2, err := New(WithComponent(*c))
+	h2, err := New(WithComponent(c))
 	require.NoError(t, err)
 	assert.Equal(t, "test", h2.component.Name)
 	assert.Equal(t, "1.0", h2.component.Version)
