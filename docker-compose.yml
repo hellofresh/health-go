@@ -69,8 +69,6 @@ services:
       retries: 5
 
   mysql:
-    # uncomment to use on ARM chip
-    # platform: linux/x86_64
     image: mysql:8
     ports:
       - "3306"
@@ -94,15 +92,14 @@ services:
 
   http:
     image: pierreprinetti/apimock:latest
+    platform: ${PLATFORM}
     ports:
       - "8080"
     environment:
       HOST: ":8080"
 
   influxdb:
-    # uncomment to use on ARM chip
-    # platform: linux/x86_64
-    image: influxdb:1.8-alpine
+    image: influxdb:1.8
     ports:
       - "8086"
     environment:

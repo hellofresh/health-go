@@ -80,27 +80,23 @@ type (
 
 	// Health is the health-checks container
 	Health struct {
-		mu     sync.Mutex
-		checks map[string]Config
+		mu            sync.Mutex
+		checks        map[string]Config
+		maxConcurrent int
 
 		tp                  trace.TracerProvider
 		instrumentationName string
 
 		component Component
 	}
-
-	checkResponse struct {
-		name      string
-		skipOnErr bool
-		err       error
-	}
 )
 
 // New instantiates and build new health check container
 func New(opts ...Option) (*Health, error) {
 	h := &Health{
-		checks: make(map[string]Config),
-		tp:     trace.NewNoopTracerProvider(),
+		checks:        make(map[string]Config),
+		tp:            trace.NewNoopTracerProvider(),
+		maxConcurrent: runtime.NumCPU(),
 	}
 
 	for _, o := range opts {
@@ -159,17 +155,6 @@ func (h *Health) HandlerFunc(w http.ResponseWriter, r *http.Request) {
 	w.Write(data)
 }
 
-type checkSpan struct {
-	ctx  context.Context
-	span trace.Span
-}
-
-func newCheckSpan(ctx context.Context, tracer trace.Tracer, name string) checkSpan {
-	var cs checkSpan
-	cs.ctx, cs.span = tracer.Start(ctx, name)
-	return cs
-}
-
 // Measure runs all the registered health checks and returns summary status
 func (h *Health) Measure(ctx context.Context) Check {
 	h.mu.Lock()
@@ -177,67 +162,74 @@ func (h *Health) Measure(ctx context.Context) Check {
 
 	tracer := h.tp.Tracer(h.instrumentationName)
 
-	ctx, span := tracer.Start(ctx, "health.Measure")
+	ctx, span := tracer.Start(
+		ctx,
+		"health.Measure",
+		trace.WithAttributes(attribute.Int("checks", len(h.checks))),
+	)
 	defer span.End()
 
 	status := StatusOK
-	total := len(h.checks)
 	failures := make(map[string]string)
-	resChan := make(chan checkResponse, total)
-	checkSpans := make(map[string]checkSpan)
 
-	span.SetAttributes(attribute.Int("checks", total))
+	limiterCh := make(chan bool, h.maxConcurrent)
+	defer close(limiterCh)
 
-	var wg sync.WaitGroup
-	wg.Add(total)
-
-	go func() {
-		defer close(resChan)
-
-		wg.Wait()
-	}()
-
+	var (
+		wg sync.WaitGroup
+		mu sync.Mutex
+	)
 	for _, c := range h.checks {
-		checkSpans[c.Name] = newCheckSpan(ctx, tracer, c.Name)
+		limiterCh <- true
+		wg.Add(1)
 
 		go func(c Config) {
-			defer wg.Done()
+			ctx, span := tracer.Start(ctx, c.Name)
+			defer func() {
+				span.End()
+				<-limiterCh
+				wg.Done()
+			}()
 
-			select {
-			case resChan <- checkResponse{c.Name, c.SkipOnErr, c.Check(ctx)}:
-			default:
-			}
-		}(c)
+			resCh := make(chan error)
+			defer close(resCh)
 
-	loop:
-		for {
+			go func() {
+				res := c.Check(ctx)
+
+				select {
+				case <-resCh:
+					// channel is already closed
+					return
+				default:
+					resCh <- res
+				}
+			}()
+
 			select {
 			case <-time.After(c.Timeout):
+				mu.Lock()
+				defer mu.Unlock()
+
+				span.SetStatus(codes.Error, string(StatusTimeout))
+
 				failures[c.Name] = string(StatusTimeout)
 				status = getAvailability(status, c.SkipOnErr)
+			case res := <-resCh:
+				mu.Lock()
+				defer mu.Unlock()
 
-				cs := checkSpans[c.Name]
-				cs.span.SetStatus(codes.Error, string(StatusTimeout))
-				cs.span.End()
+				if res != nil {
+					span.RecordError(res)
 
-				break loop
-			case res := <-resChan:
-				cs := checkSpans[res.name]
-
-				if res.err != nil {
-					failures[res.name] = res.err.Error()
-					status = getAvailability(status, res.skipOnErr)
-
-					cs.span.RecordError(res.err)
+					failures[c.Name] = res.Error()
+					status = getAvailability(status, c.SkipOnErr)
 				}
-
-				cs.span.End()
-
-				break loop
 			}
-		}
+		}(c)
 	}
 
+	wg.Wait()
 	span.SetAttributes(attribute.String("status", string(status)))
 
 	return newCheck(h.component, status, failures)

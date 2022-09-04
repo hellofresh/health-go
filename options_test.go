@@ -2,6 +2,7 @@ package health
 
 import (
 	"fmt"
+	"runtime"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -70,4 +71,17 @@ func TestWithComponent(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, "test", h2.component.Name)
 	assert.Equal(t, "1.0", h2.component.Version)
+}
+
+func TestWithMaxConcurrent(t *testing.T) {
+	numCPU := runtime.NumCPU()
+	t.Logf("Num CPUs: %d", numCPU)
+
+	h1, err := New()
+	require.NoError(t, err)
+	assert.Equal(t, numCPU, h1.maxConcurrent)
+
+	h2, err := New(WithMaxConcurrent(13))
+	require.NoError(t, err)
+	assert.Equal(t, 13, h2.maxConcurrent)
 }

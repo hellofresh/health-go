@@ -4,6 +4,10 @@ version: '3'
 env:
   CGO_ENABLED: 0
 
+vars:
+  DOCKER_PLATFORM:
+    sh: '[ `arch` == "arm64" ] && echo "linux/x86_64" || echo ""'
+
 tasks:
   test:
     summary: Run tests
@@ -18,12 +22,12 @@ tasks:
       - sh: docker-compose version --short | grep '^2'
         msg: 'docker-compose v2 is expected to be installed'
     cmds:
-      - cmd: docker-compose up --detach --wait
+      - cmd: PLATFORM={{.DOCKER_PLATFORM}} docker-compose up --detach --wait
 
   test-deps-down:
     summary: Stops test dependencies
     cmds:
-      - cmd: docker-compose down -v
+      - cmd: PLATFORM={{.DOCKER_PLATFORM}} docker-compose down -v
 
   test-run:
     summary: Runs tests, must have dependencies running in the docker-compose
@@ -31,25 +35,25 @@ tasks:
       - cmd: go test -timeout 2m -cover -coverprofile=coverage.txt -covermode=atomic ./...
     vars:
       PG_PQ_HOST:
-        sh: docker-compose port pg-pq 5432
+        sh: PLATFORM={{.DOCKER_PLATFORM}} docker-compose port pg-pq 5432
       PG_PGX4_HOST:
-        sh: docker-compose port pg-pgx4 5432
+        sh: PLATFORM={{.DOCKER_PLATFORM}} docker-compose port pg-pgx4 5432
       RABBIT_HOST_AMQP:
-        sh: docker-compose port rabbit 5672
+        sh: PLATFORM={{.DOCKER_PLATFORM}} docker-compose port rabbit 5672
       RABBIT_HOST_HTTP:
-        sh: docker-compose port rabbit 15672
+        sh: PLATFORM={{.DOCKER_PLATFORM}} docker-compose port rabbit 15672
       REDIS_HOST:
-        sh: docker-compose port redis 6379
+        sh: PLATFORM={{.DOCKER_PLATFORM}} docker-compose port redis 6379
       MONGO_HOST:
-        sh: docker-compose port mongo 27017
+        sh: PLATFORM={{.DOCKER_PLATFORM}} docker-compose port mongo 27017
       MYSQL_HOST:
-        sh: docker-compose port mysql 3306
+        sh: PLATFORM={{.DOCKER_PLATFORM}} docker-compose port mysql 3306
       HTTP_HOST:
-        sh: docker-compose port http 8080
+        sh: PLATFORM={{.DOCKER_PLATFORM}} docker-compose port http 8080
       MEMCACHED_HOST:
-        sh: docker-compose port memcached 11211
+        sh: PLATFORM={{.DOCKER_PLATFORM}} docker-compose port memcached 11211
       INFLUX_HOST:
-        sh: docker-compose port influxdb 8086
+        sh: PLATFORM={{.DOCKER_PLATFORM}} docker-compose port influxdb 8086
     env:
       HEALTH_GO_PG_PQ_DSN: 'postgres://test:test@{{.PG_PQ_HOST}}/test?sslmode=disable'
       HEALTH_GO_PG_PGX4_DSN: 'postgres://test:test@{{.PG_PGX4_HOST}}/test?sslmode=disable'
