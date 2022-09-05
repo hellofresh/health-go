@@ -2,32 +2,43 @@ package http
 
 import (
 	"context"
-	"os"
-	"strings"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/vitorsalgado/mocha/v2"
+	"github.com/vitorsalgado/mocha/v2/expect"
+	"github.com/vitorsalgado/mocha/v2/reply"
 )
 
 const httpURLEnv = "HEALTH_GO_HTTP_URL"
 
 func TestNew(t *testing.T) {
-	check := New(Config{
-		URL: getURL(t),
+	m := mocha.New(t)
+	m.Start()
+	m.CloseOnCleanup(t)
+
+	t.Run("service is available", func(t *testing.T) {
+		svc200 := m.AddMocks(mocha.Get(expect.URLPath("/test-200")).Reply(reply.OK()))
+
+		check := New(Config{
+			URL: m.URL() + "/test-200",
+		})
+
+		err := check(context.Background())
+		require.NoError(t, err)
+		assert.True(t, svc200.Called())
 	})
 
-	err := check(context.Background())
-	require.NoError(t, err)
-}
+	t.Run("service is not available", func(t *testing.T) {
+		svc500 := m.AddMocks(mocha.Get(expect.URLPath("/test-500")).Reply(reply.InternalServerError()))
 
-func getURL(t *testing.T) string {
-	t.Helper()
+		check := New(Config{
+			URL: m.URL() + "/test-500",
+		})
 
-	httpURL, ok := os.LookupEnv(httpURLEnv)
-	require.True(t, ok)
-
-	// "docker-compose port <service> <port>" returns 0.0.0.0:XXXX locally, change it to local port
-	httpURL = strings.Replace(httpURL, "0.0.0.0:", "127.0.0.1:", 1)
-
-	return httpURL
+		err := check(context.Background())
+		require.Error(t, err)
+		assert.True(t, svc500.Called())
+	})
 }

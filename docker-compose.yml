@@ -90,14 +90,6 @@ services:
     ports:
       - "11211"
 
-  http:
-    image: pierreprinetti/apimock:latest
-    platform: ${PLATFORM}
-    ports:
-      - "8080"
-    environment:
-      HOST: ":8080"
-
   influxdb:
     image: influxdb:1.8
     ports:
