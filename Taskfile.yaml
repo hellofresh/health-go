@@ -6,7 +6,7 @@ env:
 
 vars:
   DOCKER_PLATFORM:
-    sh: '[ `arch` == "arm64" ] && echo "linux/x86_64" || echo ""'
+    sh: '[ "{{ARCH}}" == "arm64" ] && echo "linux/x86_64" || echo ""'
 
 tasks:
   test:
