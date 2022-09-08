@@ -44,8 +44,6 @@ tasks:
         sh: docker-compose port mongo 27017
       MYSQL_HOST:
         sh: docker-compose port mysql 3306
-      HTTP_HOST:
-        sh: docker-compose port http 8080
       MEMCACHED_HOST:
         sh: docker-compose port memcached 11211
       INFLUX_HOST:
@@ -58,6 +56,5 @@ tasks:
       HEALTH_GO_RD_DSN: 'redis://{{.REDIS_HOST}}/'
       HEALTH_GO_MG_DSN: 'mongodb://{{.MONGO_HOST}}/'
       HEALTH_GO_MS_DSN: 'test:test@tcp({{.MYSQL_HOST}})/test?charset=utf8'
-      HEALTH_GO_HTTP_URL: 'http://{{.HTTP_HOST}}/status'
       HEALTH_GO_MD_DSN: 'memcached://localhost:{{.MEMCACHED_HOST}}/'
       HEALTH_GO_INFLUXDB_URL: 'http://{{.INFLUX_HOST}}'

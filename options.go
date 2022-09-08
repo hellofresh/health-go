@@ -41,3 +41,12 @@ func WithComponent(component Component) Option {
 		return nil
 	}
 }
+
+// WithMaxConcurrent sets max number of concurrently running checks.
+// Set to 1 if want to run all checks sequentially.
+func WithMaxConcurrent(n int) Option {
+	return func(h *Health) error {
+		h.maxConcurrent = n
+		return nil
+	}
+}
