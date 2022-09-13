@@ -14,3 +14,7 @@ linters-settings:
     simplify: false
 issues:
   exclude-use-default: false
+  exclude-rules: 
+    - linters:
+        - revive
+      text: "package-comments:"
