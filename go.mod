@@ -13,8 +13,8 @@ require (
 	github.com/stretchr/testify v1.8.0
 	github.com/vitorsalgado/mocha/v2 v2.0.2
 	go.mongodb.org/mongo-driver v1.9.1
-	go.opentelemetry.io/otel v1.7.0
-	go.opentelemetry.io/otel/trace v1.7.0
+	go.opentelemetry.io/otel v1.10.0
+	go.opentelemetry.io/otel/trace v1.10.0
 	google.golang.org/grpc v1.36.0
 )
 
