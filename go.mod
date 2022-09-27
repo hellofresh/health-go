@@ -4,7 +4,7 @@ go 1.18
 
 require (
 	github.com/bradfitz/gomemcache v0.0.0-20220106215444-fb4bf637b56d
-	github.com/go-redis/redis/v8 v8.11.5
+	github.com/go-redis/redis/v9 v9.0.0-beta.2
 	github.com/go-sql-driver/mysql v1.6.0
 	github.com/influxdata/influxdb-client-go/v2 v2.9.0
 	github.com/jackc/pgx/v4 v4.16.1
