@@ -51,6 +51,7 @@ func WithMaxConcurrent(n int) Option {
 	}
 }
 
+// WithSystemInfo enables the option to return system information about the go process.
 func WithSystemInfo() Option {
 	return func(h *Health) error {
 		h.systemInfoEnabled = true
