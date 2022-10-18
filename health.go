@@ -51,7 +51,7 @@ type (
 		// Failures holds the failed checks along with their messages.
 		Failures map[string]string `json:"failures,omitempty"`
 		// System holds information of the go process.
-		System `json:"system"`
+		*System `json:"system,omitempty"`
 		// Component holds information on the component for which checks are made
 		Component `json:"component"`
 	}
@@ -59,15 +59,15 @@ type (
 	// System runtime variables about the go process.
 	System struct {
 		// Version is the go version.
-		Version string `json:"version"`
+		Version string `json:"version,omitempty"`
 		// GoroutinesCount is the number of the current goroutines.
-		GoroutinesCount int `json:"goroutines_count"`
+		GoroutinesCount int `json:"goroutines_count,omitempty"`
 		// TotalAllocBytes is the total bytes allocated.
-		TotalAllocBytes int `json:"total_alloc_bytes"`
+		TotalAllocBytes int `json:"total_alloc_bytes,omitempty"`
 		// HeapObjectsCount is the number of objects in the go heap.
-		HeapObjectsCount int `json:"heap_objects_count"`
+		HeapObjectsCount int `json:"heap_objects_count,omitempty"`
 		// TotalAllocBytes is the bytes allocated and not yet freed.
-		AllocBytes int `json:"alloc_bytes"`
+		AllocBytes int `json:"alloc_bytes,omitempty"`
 	}
 
 	// Component descriptive values about the component for which checks are made
@@ -88,6 +88,8 @@ type (
 		instrumentationName string
 
 		component Component
+
+		systemInfoEnabled bool
 	}
 )
 
@@ -232,24 +234,29 @@ func (h *Health) Measure(ctx context.Context) Check {
 	wg.Wait()
 	span.SetAttributes(attribute.String("status", string(status)))
 
-	return newCheck(h.component, status, failures)
+	var systemMetrics *System
+	if h.systemInfoEnabled {
+		systemMetrics = newSystemMetrics()
+	}
+
+	return newCheck(h.component, status, systemMetrics, failures)
 }
 
-func newCheck(c Component, s Status, failures map[string]string) Check {
+func newCheck(c Component, s Status, system *System, failures map[string]string) Check {
 	return Check{
 		Status:    s,
 		Timestamp: time.Now(),
 		Failures:  failures,
-		System:    newSystemMetrics(),
+		System:    system,
 		Component: c,
 	}
 }
 
-func newSystemMetrics() System {
+func newSystemMetrics() *System {
 	s := runtime.MemStats{}
 	runtime.ReadMemStats(&s)
 
-	return System{
+	return &System{
 		Version:          runtime.Version(),
 		GoroutinesCount:  runtime.NumGoroutine(),
 		TotalAllocBytes:  int(s.TotalAlloc),

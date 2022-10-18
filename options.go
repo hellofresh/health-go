@@ -50,3 +50,10 @@ func WithMaxConcurrent(n int) Option {
 		return nil
 	}
 }
+
+func WithSystemInfo() Option {
+	return func(h *Health) error {
+		h.systemInfoEnabled = true
+		return nil
+	}
+}
