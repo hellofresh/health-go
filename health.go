@@ -59,15 +59,15 @@ type (
 	// System runtime variables about the go process.
 	System struct {
 		// Version is the go version.
-		Version string `json:"version,omitempty"`
+		Version string `json:"version"`
 		// GoroutinesCount is the number of the current goroutines.
-		GoroutinesCount int `json:"goroutines_count,omitempty"`
+		GoroutinesCount int `json:"goroutines_count"`
 		// TotalAllocBytes is the total bytes allocated.
-		TotalAllocBytes int `json:"total_alloc_bytes,omitempty"`
+		TotalAllocBytes int `json:"total_alloc_bytes"`
 		// HeapObjectsCount is the number of objects in the go heap.
-		HeapObjectsCount int `json:"heap_objects_count,omitempty"`
+		HeapObjectsCount int `json:"heap_objects_count"`
 		// TotalAllocBytes is the bytes allocated and not yet freed.
-		AllocBytes int `json:"alloc_bytes,omitempty"`
+		AllocBytes int `json:"alloc_bytes"`
 	}
 
 	// Component descriptive values about the component for which checks are made
