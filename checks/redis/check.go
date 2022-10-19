@@ -21,13 +21,14 @@ func New(config Config) func(ctx context.Context) error {
 	// support all DSN formats (for backward compatibility) - with and w/out schema and path part:
 	// - redis://localhost:1234/
 	// - localhost:1234
-	redisDSN := strings.TrimPrefix(config.DSN, "redis://")
-	redisDSN = strings.TrimSuffix(redisDSN, "/")
+	redisDSN := config.DSN
+	if !strings.HasPrefix(redisDSN, "redis://") {
+		redisDSN = fmt.Sprintf("redis://%s", redisDSN)
+	}
+	redisOptions, _ := redis.ParseURL(redisDSN)
 
 	return func(ctx context.Context) error {
-		rdb := redis.NewClient(&redis.Options{
-			Addr: redisDSN,
-		})
+		rdb := redis.NewClient(redisOptions)
 		defer rdb.Close()
 
 		pong, err := rdb.Ping(ctx).Result()
