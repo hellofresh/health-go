@@ -143,4 +143,11 @@ func TestHealth_Measure(t *testing.T) {
 	assert.Equal(t, StatusUnavailable, result.Status)
 	assert.Equal(t, string(StatusTimeout), result.Failures["check1"])
 	assert.Equal(t, string(StatusTimeout), result.Failures["check2"])
+	assert.Nil(t, result.System)
+
+	h, err = New(WithSystemInfo())
+	require.NoError(t, err)
+	result = h.Measure(context.Background())
+
+	assert.NotNil(t, result.System)
 }

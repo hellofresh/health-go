@@ -85,3 +85,13 @@ func TestWithMaxConcurrent(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, 13, h2.maxConcurrent)
 }
+
+func TestWithSystemInfo(t *testing.T) {
+	h1, err := New()
+	require.NoError(t, err)
+	assert.False(t, h1.systemInfoEnabled)
+
+	h2, err := New(WithSystemInfo())
+	require.NoError(t, err)
+	assert.True(t, h2.systemInfoEnabled)
+}

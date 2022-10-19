@@ -51,7 +51,7 @@ type (
 		// Failures holds the failed checks along with their messages.
 		Failures map[string]string `json:"failures,omitempty"`
 		// System holds information of the go process.
-		System `json:"system"`
+		*System `json:"system,omitempty"`
 		// Component holds information on the component for which checks are made
 		Component `json:"component"`
 	}
@@ -88,6 +88,8 @@ type (
 		instrumentationName string
 
 		component Component
+
+		systemInfoEnabled bool
 	}
 )
 
@@ -232,24 +234,29 @@ func (h *Health) Measure(ctx context.Context) Check {
 	wg.Wait()
 	span.SetAttributes(attribute.String("status", string(status)))
 
-	return newCheck(h.component, status, failures)
+	var systemMetrics *System
+	if h.systemInfoEnabled {
+		systemMetrics = newSystemMetrics()
+	}
+
+	return newCheck(h.component, status, systemMetrics, failures)
 }
 
-func newCheck(c Component, s Status, failures map[string]string) Check {
+func newCheck(c Component, s Status, system *System, failures map[string]string) Check {
 	return Check{
 		Status:    s,
 		Timestamp: time.Now(),
 		Failures:  failures,
-		System:    newSystemMetrics(),
+		System:    system,
 		Component: c,
 	}
 }
 
-func newSystemMetrics() System {
+func newSystemMetrics() *System {
 	s := runtime.MemStats{}
 	runtime.ReadMemStats(&s)
 
-	return System{
+	return &System{
 		Version:          runtime.Version(),
 		GoroutinesCount:  runtime.NumGoroutine(),
 		TotalAllocBytes:  int(s.TotalAlloc),

@@ -13,7 +13,7 @@ import (
 )
 
 func main() {
-	h, _ := health.New()
+	h, _ := health.New(health.WithSystemInfo())
 	// custom health check example (fail)
 	h.Register(health.Config{
 		Name:      "some-custom-check-fail",
