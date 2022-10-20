@@ -1,4 +1,4 @@
-module github.com/hellofresh/health-go/v4
+module github.com/hellofresh/health-go/v5
 
 go 1.18
 
