@@ -194,18 +194,10 @@ func (h *Health) Measure(ctx context.Context) Check {
 			}()
 
 			resCh := make(chan error)
-			defer close(resCh)
 
 			go func() {
-				res := c.Check(ctx)
-
-				select {
-				case <-resCh:
-					// channel is already closed
-					return
-				default:
-					resCh <- res
-				}
+				resCh <- c.Check(ctx)
+				defer close(resCh)
 			}()
 
 			select {
