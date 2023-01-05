@@ -9,6 +9,7 @@ require (
 	github.com/influxdata/influxdb-client-go/v2 v2.9.0
 	github.com/jackc/pgx/v4 v4.16.1
 	github.com/lib/pq v1.10.6
+	github.com/mattn/go-sqlite3 v1.14.16
 	github.com/rabbitmq/amqp091-go v1.3.4
 	github.com/stretchr/testify v1.8.0
 	github.com/vitorsalgado/mocha/v2 v2.0.2
