@@ -34,6 +34,8 @@ tasks:
         sh: docker-compose port pg-pq 5432
       PG_PGX4_HOST:
         sh: docker-compose port pg-pgx4 5432
+      PG_PGX5_HOST:
+        sh: docker-compose port pg-pgx5 5432
       RABBIT_HOST_AMQP:
         sh: docker-compose port rabbit 5672
       RABBIT_HOST_HTTP:
@@ -51,6 +53,7 @@ tasks:
     env:
       HEALTH_GO_PG_PQ_DSN: 'postgres://test:test@{{.PG_PQ_HOST}}/test?sslmode=disable'
       HEALTH_GO_PG_PGX4_DSN: 'postgres://test:test@{{.PG_PGX4_HOST}}/test?sslmode=disable'
+      HEALTH_GO_PG_PGX5_DSN: 'postgres://test:test@{{.PG_PGX5_HOST}}/test?sslmode=disable'
       HEALTH_GO_MQ_DSN: 'amqp://guest:guest@{{.RABBIT_HOST_AMQP}}/'
       HEALTH_GO_MQ_URL: 'http://guest:guest@{{.RABBIT_HOST_HTTP}}/'
       HEALTH_GO_RD_DSN: 'redis://{{.REDIS_HOST}}/'

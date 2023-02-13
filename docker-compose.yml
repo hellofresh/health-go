@@ -34,6 +34,22 @@ services:
       timeout: 5s
       retries: 5
 
+  pg-pgx5:
+    image: postgres:10
+    ports:
+      - "5432"
+    environment:
+      POSTGRES_USER: test
+      POSTGRES_PASSWORD: test
+      POSTGRES_DB: test
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD", "pg_isready" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   rabbit:
     image: rabbitmq:3.6-management-alpine
     ports:
