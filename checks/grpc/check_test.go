@@ -2,9 +2,7 @@ package grpc
 
 import (
 	"context"
-	"log"
 	"net"
-	"os"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -13,77 +11,63 @@ import (
 	"google.golang.org/grpc/health/grpc_health_v1"
 )
 
-const (
-	addr    = ":8080"
-	service = "HealthTest"
-)
+func TestNew(t *testing.T) {
+	for name, tc := range map[string]struct {
+		servingStatus grpc_health_v1.HealthCheckResponse_ServingStatus
+		requireError  bool
+	}{
+		"serving": {
+			servingStatus: grpc_health_v1.HealthCheckResponse_SERVING,
+			requireError:  false,
+		},
+		"unknown": {
+			servingStatus: grpc_health_v1.HealthCheckResponse_UNKNOWN,
+			requireError:  true,
+		},
+		"not serving": {
+			servingStatus: grpc_health_v1.HealthCheckResponse_NOT_SERVING,
+			requireError:  true,
+		},
+	} {
+		servingStatus := tc.servingStatus
+		requireError := tc.requireError
 
-var healthServer *health.Server
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
 
-func TestMain(m *testing.M) {
-	healthServer = health.NewServer()
-	healthServer.SetServingStatus(service, grpc_health_v1.HealthCheckResponse_SERVING)
+			const service = "HealthTest"
 
-	lis, err := net.Listen("tcp", addr)
-	if err != nil {
-		log.Fatalf("error setting up tcp listener: %v", err)
+			healthServer := health.NewServer()
+			healthServer.SetServingStatus(service, servingStatus)
+
+			lis, err := net.Listen("tcp", "localhost:0")
+			require.NoError(t, err)
+
+			server := grpc.NewServer()
+			grpc_health_v1.RegisterHealthServer(server, healthServer)
+
+			go func() {
+				if err := server.Serve(lis); err != nil {
+					t.Log("Failed to serve GRPC", err)
+				}
+			}()
+			defer server.Stop()
+
+			check := New(Config{
+				Target:  lis.Addr().String(),
+				Service: service,
+				DialOptions: []grpc.DialOption{
+					grpc.WithInsecure(),
+				},
+			})
+
+			err = check(context.Background())
+
+			if requireError {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
+			}
+		})
 	}
-
-	server := grpc.NewServer()
-	grpc_health_v1.RegisterHealthServer(server, healthServer)
-
-	go func() {
-		if err := server.Serve(lis); err != nil {
-			log.Fatalf("failed to serve: %v", err)
-		}
-	}()
-
-	defer server.Stop()
-
-	os.Exit(m.Run())
-}
-
-func TestNew_WithServingStatusServing(t *testing.T) {
-	healthServer.SetServingStatus(service, grpc_health_v1.HealthCheckResponse_SERVING)
-
-	check := New(Config{
-		Target:  addr,
-		Service: service,
-		DialOptions: []grpc.DialOption{
-			grpc.WithInsecure(),
-		},
-	})
-
-	err := check(context.Background())
-	require.NoError(t, err)
-}
-
-func TestNew_WithServingStatusUnknown(t *testing.T) {
-	healthServer.SetServingStatus(service, grpc_health_v1.HealthCheckResponse_UNKNOWN)
-
-	check := New(Config{
-		Target:  addr,
-		Service: service,
-		DialOptions: []grpc.DialOption{
-			grpc.WithInsecure(),
-		},
-	})
-
-	err := check(context.Background())
-	require.Error(t, err)
-}
-
-func TestNew_WithServingStatusNotServing(t *testing.T) {
-	healthServer.SetServingStatus(service, grpc_health_v1.HealthCheckResponse_NOT_SERVING)
-
-	check := New(Config{
-		Target:  addr,
-		Service: service,
-		DialOptions: []grpc.DialOption{
-			grpc.WithInsecure(),
-		},
-	})
-
-	err := check(context.Background())
-	require.Error(t, err)
 }
