@@ -2,7 +2,6 @@ package grpc
 
 import (
 	"context"
-	"log"
 	"net"
 	"testing"
 
@@ -49,7 +48,7 @@ func TestNew(t *testing.T) {
 
 			go func() {
 				if err := server.Serve(lis); err != nil {
-					log.Fatalf("failed to serve: %v", err)
+					t.Log("Failed to serve GRPC", err)
 				}
 			}()
 			defer server.Stop()
