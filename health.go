@@ -200,8 +200,10 @@ func (h *Health) Measure(ctx context.Context) Check {
 				defer close(resCh)
 			}()
 
+			timeout := time.NewTimer(c.Timeout)
+
 			select {
-			case <-time.After(c.Timeout):
+			case <-timeout.C:
 				mu.Lock()
 				defer mu.Unlock()
 
@@ -210,6 +212,10 @@ func (h *Health) Measure(ctx context.Context) Check {
 				failures[c.Name] = string(StatusTimeout)
 				status = getAvailability(status, c.SkipOnErr)
 			case res := <-resCh:
+				if !timeout.Stop() {
+					<-timeout.C
+				}
+
 				mu.Lock()
 				defer mu.Unlock()
 
