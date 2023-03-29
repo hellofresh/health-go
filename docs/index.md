@@ -10,6 +10,7 @@
   * HTTP
   * MongoDB
   * MySQL
+  * SQLServer
   * gRPC
   * Memcached
 

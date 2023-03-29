@@ -101,6 +101,19 @@ services:
       timeout: 5s
       retries: 5
 
+  sqlserver:
+    image: microsoft/mssql-server-linux:2022-latest
+    ports:
+      - "1433"
+    environment:
+      ACCEPT_EULA: Y
+      SA_PASSWORD: test
+    healthcheck:
+      test: [ "CMD", "sqlcmd", "-U", "sa", "-P", "test", "-Q", "SELECT 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   memcached:
     image: memcached:1.6.9-alpine
     ports:
