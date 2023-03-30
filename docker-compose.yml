@@ -102,7 +102,7 @@ services:
       retries: 5
 
   sqlserver:
-    image: microsoft/mssql-server-linux:2022-latest
+    image: mcr.microsoft.com/mssql/server:2022-latest
     ports:
       - "1433"
     environment:
