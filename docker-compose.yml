@@ -102,14 +102,19 @@ services:
       retries: 5
 
   sqlserver:
-    image: mcr.microsoft.com/mssql/server:2022-latest
+    image: mcr.microsoft.com/mssql/server:2019-latest
+    container_name: sqlserver
     ports:
-      - "1433"
+      - "1433:1433"
     environment:
-      ACCEPT_EULA: Y
-      SA_PASSWORD: test
+      SA_PASSWORD: "MyPassword123"
+      ACCEPT_EULA: "Y"
+      MSSQL_USER: "Test"
+      MSSQL_PASSWORD: "MyTestPassword456"
+
+      
     healthcheck:
-      test: [ "CMD", "sqlcmd", "-U", "sa", "-P", "test", "-Q", "SELECT 1" ]
+      test: [ "CMD", "sqlcmd", "-U", "sa", "-P", "MyPassword123", "-Q", "SELECT 1" ]
       interval: 10s
       timeout: 5s
       retries: 5

@@ -3,6 +3,7 @@ package sqlserver
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"os"
 	"sync"
 	"testing"
@@ -14,7 +15,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const sqlServerDSNEnv = "HEALTH_SS_DSN"
+const sqlServerDSNEnv = "HEALTH_GO_SS_DSN"
 
 func TestNew(t *testing.T) {
 	initDB(t)
@@ -30,9 +31,9 @@ func TestNew(t *testing.T) {
 func TestEnsureConnectionIsClosed(t *testing.T) {
 	initDB(t)
 
-	sqlServerDSN := getDSN(t)
+	sqlDSN := getDSN(t)
 
-	db, err := sql.Open(azuread.DriverName, sqlServerDSN)
+	db, err := sql.Open(azuread.DriverName, sqlDSN)
 	require.NoError(t, err)
 
 	defer func() {
@@ -40,15 +41,13 @@ func TestEnsureConnectionIsClosed(t *testing.T) {
 		assert.NoError(t, err)
 	}()
 
-	var (
-		initialConnections int
-	)
-	row := db.QueryRow(`SELECT cntr_value FROM sys.dm_os_performance_counters WHERE counter_name = 'User Connections' AND instance_name = 'Total'`)
+	var initialConnections int
+	row := db.QueryRow(`SELECT COUNT(session_id) FROM sys.dm_exec_sessions`)
 	err = row.Scan(&initialConnections)
 	require.NoError(t, err)
 
 	check := New(Config{
-		DSN: sqlServerDSN,
+		DSN: sqlDSN,
 	})
 
 	ctx := context.Background()
@@ -59,7 +58,7 @@ func TestEnsureConnectionIsClosed(t *testing.T) {
 	}
 
 	var currentConnections int
-	row = db.QueryRow(`SELECT cntr_value FROM sys.dm_os_performance_counters WHERE counter_name = 'User Connections' AND instance_name = 'Total'`)
+	row = db.QueryRow(`SELECT COUNT(session_id) FROM sys.dm_exec_sessions`)
 	err = row.Scan(&currentConnections)
 	require.NoError(t, err)
 
@@ -69,7 +68,9 @@ func TestEnsureConnectionIsClosed(t *testing.T) {
 func getDSN(t *testing.T) string {
 	t.Helper()
 
+	//get env
 	sqlServerDSN, ok := os.LookupEnv(sqlServerDSNEnv)
+	fmt.Println(sqlServerDSN)
 	require.True(t, ok)
 
 	return sqlServerDSN
@@ -81,7 +82,9 @@ func initDB(t *testing.T) {
 	t.Helper()
 
 	dbInit.Do(func() {
-		db, err := sql.Open("sqlserver", getDSN(t))
+		// sqlDSN := getDSN(t)
+
+		db, err := sql.Open(azuread.DriverName, getDSN(t))
 		require.NoError(t, err)
 
 		defer func() {
@@ -90,12 +93,15 @@ func initDB(t *testing.T) {
 		}()
 
 		_, err = db.Exec(`
-CREATE TABLE IF NOT EXISTS test (
-  id           INT NOT NULL IDENTITY(1,1) PRIMARY KEY ,
-  secret       VARCHAR(256) NOT NULL,
-  extra        VARCHAR(256) NOT NULL,
-  redirect_uri VARCHAR(256) NOT NULL
+IF OBJECT_ID('dbo.test_mssql', 'U') IS NULL
+BEGIN
+CREATE TABLE test_mssql (
+  id           NVARCHAR(255) NOT NULL PRIMARY KEY,
+  secret       NVARCHAR(255) NOT NULL,
+  extra        NVARCHAR(255) NOT NULL,
+  redirect_uri NVARCHAR(255) NOT NULL
 );
+END
 `)
 		require.NoError(t, err)
 	})
