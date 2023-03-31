@@ -111,12 +111,10 @@ services:
       ACCEPT_EULA: "Y"
       MSSQL_USER: "Test"
       MSSQL_PASSWORD: "MyTestPassword456"
-
-      
     healthcheck:
-      test: [ "CMD", "sqlcmd", "-U", "sa", "-P", "MyPassword123", "-Q", "SELECT 1" ]
-      interval: 10s
-      timeout: 5s
+      test: [ "CMD-SHELL", "pidof sqlservr || exit 1" ]
+      interval: 30s
+      timeout: 10s
       retries: 5
 
   memcached:
