@@ -44,12 +44,9 @@ func New(config Config) func(ctx context.Context) error {
 			checkErr = fmt.Errorf("SQL Server health check failed on select: %w", err)
 			return
 		}
-		defer func() {
-			// override checkErr only if there were no other errors
-			if err = rows.Close(); err != nil && checkErr == nil {
-				checkErr = fmt.Errorf("SQL Server health check failed on rows closing: %w", err)
-			}
-		}()
+		if err = rows.Close(); err != nil {
+			checkErr = fmt.Errorf("SQL Server health check failed on rows closing: %w", err)
+		}
 
 		return
 	}
