@@ -3,7 +3,6 @@ package sqlserver
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	"os"
 	"sync"
 	"testing"
@@ -69,9 +68,8 @@ func getDSN(t *testing.T) string {
 	t.Helper()
 
 	//get env
-	sqlServerDSN, ok := os.LookupEnv(sqlServerDSNEnv)
-	fmt.Println(sqlServerDSN)
-	require.True(t, ok)
+	sqlServerDSN := os.Getenv(sqlServerDSNEnv)
+	require.NotEmpty(t, sqlServerDSN)
 
 	return sqlServerDSN
 }
@@ -82,8 +80,6 @@ func initDB(t *testing.T) {
 	t.Helper()
 
 	dbInit.Do(func() {
-		// sqlDSN := getDSN(t)
-
 		db, err := sql.Open(azuread.DriverName, getDSN(t))
 		require.NoError(t, err)
 

@@ -105,6 +105,10 @@ func New(config Config) func(ctx context.Context) error {
 
 			// release the channel resources, and unblock the receive on done below
 			close(done)
+
+			// now drain any incidental remaining messages
+			for range messages {
+			}
 		}()
 
 		p := amqp.Publishing{Body: []byte(time.Now().Format(time.RFC3339Nano))}
