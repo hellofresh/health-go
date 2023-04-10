@@ -101,6 +101,22 @@ services:
       timeout: 5s
       retries: 5
 
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2019-latest
+    container_name: sqlserver
+    ports:
+      - "1433:1433"
+    environment:
+      SA_PASSWORD: "MyPassword123"
+      ACCEPT_EULA: "Y"
+      MSSQL_USER: "Test"
+      MSSQL_PASSWORD: "MyTestPassword456"
+    healthcheck:
+      test: [ "CMD-SHELL", "pidof sqlservr || exit 1" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
   memcached:
     image: memcached:1.6.9-alpine
     ports:
