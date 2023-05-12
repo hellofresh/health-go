@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/microsoft/go-mssqldb/azuread"
+	"github.com/denisenkom/go-mssqldb/azuread"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
