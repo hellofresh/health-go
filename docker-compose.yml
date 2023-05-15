@@ -115,3 +115,13 @@ services:
       DOCKER_INFLUXDB_INIT_PASSWORD: test
       DOCKER_INFLUXDB_INIT_ORG: test
       DOCKER_INFLUXDB_INIT_BUCKET: test
+
+  cassandra:
+    image: cassandra:4.1.0
+    ports:
+      - "9042"
+    healthcheck:
+      test: [ "CMD", "cqlsh", "-u cassandra", "-p cassandra" ,"-e describe keyspaces" ]
+      interval: 15s
+      timeout: 10s
+      retries: 10
