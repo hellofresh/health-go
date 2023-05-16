@@ -3,11 +3,12 @@ package cassandra
 import (
 	"context"
 	"fmt"
-	"github.com/gocql/gocql"
-	"github.com/stretchr/testify/require"
 	"os"
 	"strings"
 	"testing"
+
+	"github.com/gocql/gocql"
+	"github.com/stretchr/testify/require"
 )
 
 const HOST = "HEALTH_GO_CASSANDRA_HOST"
