@@ -1,0 +1,7 @@
+version: 2
+updates:
+  - package-ecosystem: "gomod"
+    directory: "/"
+    rebase-strategy: "disabled"
+    schedule:
+      interval: "daily"
