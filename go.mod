@@ -12,7 +12,7 @@ require (
 	github.com/jackc/pgx/v5 v5.4.1
 	github.com/lib/pq v1.10.9
 	github.com/rabbitmq/amqp091-go v1.8.1
-	github.com/stretchr/testify v1.8.3
+	github.com/stretchr/testify v1.8.4
 	github.com/vitorsalgado/mocha/v2 v2.0.2
 	go.mongodb.org/mongo-driver v1.11.7
 	go.opentelemetry.io/otel v1.16.0
