@@ -12,11 +12,11 @@ require (
 	github.com/jackc/pgx/v5 v5.2.0
 	github.com/lib/pq v1.10.6
 	github.com/rabbitmq/amqp091-go v1.3.4
-	github.com/stretchr/testify v1.8.2
+	github.com/stretchr/testify v1.8.3
 	github.com/vitorsalgado/mocha/v2 v2.0.2
 	go.mongodb.org/mongo-driver v1.9.1
-	go.opentelemetry.io/otel v1.10.0
-	go.opentelemetry.io/otel/trace v1.10.0
+	go.opentelemetry.io/otel v1.16.0
+	go.opentelemetry.io/otel/trace v1.16.0
 	google.golang.org/grpc v1.36.0
 )
 
