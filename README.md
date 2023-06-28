@@ -14,6 +14,7 @@
   * gRPC
   * Memcached
   * InfluxDB
+  * Nats
 
 ## Usage
 

@@ -12,6 +12,7 @@
   * MySQL
   * gRPC
   * Memcached
+  * Nats
 
 ## Usage
 
