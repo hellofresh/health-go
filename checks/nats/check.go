@@ -3,6 +3,7 @@ package nats
 import (
 	"context"
 	"fmt"
+
 	"github.com/nats-io/nats.go"
 )
 
