@@ -132,3 +132,16 @@ services:
     command: "-js -sd /data"
     ports:
       - "4222:4222"
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.8.2
+    ports:
+      - "9200:9200"
+    environment:
+      - discovery.type=single-node
+      - ELASTIC_PASSWORD=test
+    healthcheck:
+      test: ["CMD-SHELL", "curl -k -u elastic:test https://localhost:9200 >/dev/null || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
