@@ -28,7 +28,7 @@ tasks:
   test-run:
     summary: Runs tests, must have dependencies running in the docker-compose
     cmds:
-      - cmd: go test -timeout 2m -cover -coverprofile=coverage.txt -covermode=atomic ./...
+      - cmd: go test -race -timeout 2m -cover -coverprofile=coverage.txt -covermode=atomic ./...
     vars:
       PG_PQ_HOST:
         sh: docker-compose port pg-pq 5432
