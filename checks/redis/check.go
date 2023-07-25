@@ -22,7 +22,6 @@ func New(config Config) func(ctx context.Context) error {
 	// - redis://localhost:1234/
 	// - rediss://localhost:1234/
 	// - localhost:1234
-
 	redisDSN := config.DSN
 	if !strings.HasPrefix(redisDSN, "redis://") && !strings.HasPrefix(redisDSN, "rediss://") {
 		redisDSN = fmt.Sprintf("redis://%s", redisDSN)
