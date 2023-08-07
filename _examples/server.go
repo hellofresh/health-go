@@ -19,13 +19,15 @@ func main() {
 		Name:      "some-custom-check-fail",
 		Timeout:   time.Second * 5,
 		SkipOnErr: true,
-		Check:     func(context.Context) error { return errors.New("failed during custom health check") },
+		Check: func(context.Context) health.CheckResponse {
+			return health.CheckResponse{Error: errors.New("failed during custom health check")}
+		},
 	})
 
 	// custom health check example (success)
 	h.Register(health.Config{
 		Name:  "some-custom-check-success",
-		Check: func(context.Context) error { return nil },
+		Check: func(context.Context) health.CheckResponse { return health.CheckResponse{} },
 	})
 
 	// http health check example

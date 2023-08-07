@@ -61,12 +61,12 @@ func TestNew(t *testing.T) {
 				},
 			})
 
-			err = check(context.Background())
+			checkResponse := check(context.Background())
 
 			if requireError {
-				require.Error(t, err)
+				require.Error(t, checkResponse.Error)
 			} else {
-				require.NoError(t, err)
+				require.NoError(t, checkResponse.Error)
 			}
 		})
 	}

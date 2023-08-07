@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/hellofresh/health-go/v5"
 
 	"github.com/gocql/gocql"
 )
@@ -19,10 +20,11 @@ type Config struct {
 // New creates new Cassandra health check that verifies the following:
 // - that a connection can be established through creating a session
 // - that queries can be executed by describing keyspaces
-func New(config Config) func(ctx context.Context) error {
-	return func(ctx context.Context) error {
+func New(config Config) func(ctx context.Context) health.CheckResponse {
+	return func(ctx context.Context) (checkResponse health.CheckResponse) {
 		if len(config.Hosts) < 1 || len(config.Keyspace) < 1 {
-			return errors.New("keyspace name and hosts are required to initialize cassandra health check")
+			checkResponse.Error = errors.New("keyspace name and hosts are required to initialize cassandra health check")
+			return
 		}
 
 		cluster := gocql.NewCluster(config.Hosts...)
@@ -30,16 +32,18 @@ func New(config Config) func(ctx context.Context) error {
 
 		session, err := cluster.CreateSession()
 		if err != nil {
-			return fmt.Errorf("cassandra health check failed on connect: %w", err)
+			checkResponse.Error = fmt.Errorf("cassandra health check failed on connect: %w", err)
+			return
 		}
 
 		defer session.Close()
 
 		err = session.Query("DESCRIBE KEYSPACES;").WithContext(ctx).Exec()
 		if err != nil {
-			return fmt.Errorf("cassandra health check failed on describe: %w", err)
+			checkResponse.Error = fmt.Errorf("cassandra health check failed on describe: %w", err)
+			return
 		}
 
-		return nil
+		return
 	}
 }

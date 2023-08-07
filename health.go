@@ -18,17 +18,20 @@ import (
 // Status type represents health status
 type Status string
 
-// Possible health statuses
 const (
-	StatusOK                 Status = "OK"
-	StatusPartiallyAvailable Status = "Partially Available"
-	StatusUnavailable        Status = "Unavailable"
-	StatusTimeout            Status = "Timeout during health check"
+	// StatusPassing healthcheck is passing
+	StatusPassing Status = "passing"
+	// StatusWarning healthcheck is failing but should not fail the component
+	StatusWarning Status = "warning"
+	// StatusCritical healthcheck is failing should fail the component
+	StatusCritical Status = "critical"
+	// StatusTimeout healthcheck timed out should fail the component
+	StatusTimeout Status = "timeout"
 )
 
 type (
 	// CheckFunc is the func which executes the check.
-	CheckFunc func(context.Context) error
+	CheckFunc func(context.Context) CheckResponse
 
 	// Config carries the parameters to run the check.
 	Config struct {
@@ -36,7 +39,7 @@ type (
 		Name string
 		// Timeout is the timeout defined for every check.
 		Timeout time.Duration
-		// SkipOnErr if set to true, it will retrieve StatusOK providing the error message from the failed resource.
+		// SkipOnErr if set to true, it will retrieve StatusPassing providing the error message from the failed resource.
 		SkipOnErr bool
 		// Check is the func which executes the check.
 		Check CheckFunc
@@ -54,6 +57,14 @@ type (
 		*System `json:"system,omitempty"`
 		// Component holds information on the component for which checks are made
 		Component `json:"component"`
+	}
+
+	CheckResponse struct {
+		// Error message
+		Error error
+
+		// IsWarning if set to true, it will retrieve StatusPassing providing the error message from the failed resource.
+		IsWarning bool
 	}
 
 	// System runtime variables about the go process.
@@ -149,10 +160,20 @@ func (h *Health) HandlerFunc(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	code := http.StatusOK
-	if c.Status == StatusUnavailable {
-		code = http.StatusServiceUnavailable
+	// Default status should always be failing
+	// Return 503 indicating service is unavailable
+	code := http.StatusServiceUnavailable
+
+	// Return 200 when passing
+	if c.Status == StatusPassing {
+		code = http.StatusOK
 	}
+
+	// Return 429 indicating to try again later
+	if c.Status == StatusWarning {
+		code = http.StatusTooManyRequests
+	}
+
 	w.WriteHeader(code)
 	w.Write(data)
 }
@@ -171,7 +192,7 @@ func (h *Health) Measure(ctx context.Context) Check {
 	)
 	defer span.End()
 
-	status := StatusOK
+	status := StatusPassing
 	failures := make(map[string]string)
 
 	limiterCh := make(chan bool, h.maxConcurrent)
@@ -193,7 +214,7 @@ func (h *Health) Measure(ctx context.Context) Check {
 				wg.Done()
 			}()
 
-			resCh := make(chan error)
+			resCh := make(chan CheckResponse)
 
 			go func() {
 				resCh <- c.Check(ctx)
@@ -219,11 +240,11 @@ func (h *Health) Measure(ctx context.Context) Check {
 				mu.Lock()
 				defer mu.Unlock()
 
-				if res != nil {
-					span.RecordError(res)
+				if res.Error != nil {
+					span.RecordError(res.Error)
 
-					failures[c.Name] = res.Error()
-					status = getAvailability(status, c.SkipOnErr)
+					failures[c.Name] = res.Error.Error()
+					status = getAvailability(status, c.SkipOnErr || res.IsWarning)
 				}
 			}
 		}(c)
@@ -264,9 +285,9 @@ func newSystemMetrics() *System {
 }
 
 func getAvailability(s Status, skipOnErr bool) Status {
-	if skipOnErr && s != StatusUnavailable {
-		return StatusPartiallyAvailable
+	if skipOnErr && s != StatusCritical {
+		return StatusWarning
 	}
 
-	return StatusUnavailable
+	return StatusCritical
 }

@@ -99,7 +99,7 @@ func TestHealthHandler(t *testing.T) {
 	err = json.NewDecoder(res.Body).Decode(&body)
 	require.NoError(t, err)
 
-	assert.Equal(t, string(StatusPartiallyAvailable), body["status"], "body returned wrong status")
+	assert.Equal(t, string(StatusWarning), body["status"], "body returned wrong status")
 
 	failure, ok := body["failures"]
 	assert.True(t, ok, "body returned nil failures field")
@@ -140,7 +140,7 @@ func TestHealth_Measure(t *testing.T) {
 	require.GreaterOrEqual(t, elapsed.Milliseconds(), (time.Second * 2).Milliseconds())
 	require.Less(t, elapsed.Milliseconds(), (time.Second * 5).Milliseconds())
 
-	assert.Equal(t, StatusUnavailable, result.Status)
+	assert.Equal(t, StatusCritical, result.Status)
 	assert.Equal(t, string(StatusTimeout), result.Failures["check1"])
 	assert.Equal(t, string(StatusTimeout), result.Failures["check2"])
 	assert.Nil(t, result.System)

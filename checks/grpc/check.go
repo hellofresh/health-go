@@ -3,6 +3,7 @@ package grpc
 import (
 	"context"
 	"fmt"
+	"github.com/hellofresh/health-go/v5"
 	"time"
 
 	"google.golang.org/grpc"
@@ -25,16 +26,17 @@ type Config struct {
 }
 
 // New creates new gRPC health check
-func New(config Config) func(ctx context.Context) error {
+func New(config Config) func(ctx context.Context) health.CheckResponse {
 	if config.CheckTimeout == 0 {
 		config.CheckTimeout = defaultCheckTimeout
 	}
 
-	return func(ctx context.Context) error {
+	return func(ctx context.Context) (checkResponse health.CheckResponse) {
 		// Set up a connection to the gRPC server
 		conn, err := grpc.Dial(config.Target, config.DialOptions...)
 		if err != nil {
-			return fmt.Errorf("gRPC health check failed on connect: %w", err)
+			checkResponse.Error = fmt.Errorf("gRPC health check failed on connect: %w", err)
+			return
 		}
 		defer conn.Close()
 
@@ -47,13 +49,15 @@ func New(config Config) func(ctx context.Context) error {
 			Service: config.Service,
 		})
 		if err != nil {
-			return fmt.Errorf("gRPC health check failed on check call: %w", err)
+			checkResponse.Error = fmt.Errorf("gRPC health check failed on check call: %w", err)
+			return
 		}
 
 		if res.GetStatus() != grpc_health_v1.HealthCheckResponse_SERVING {
-			return fmt.Errorf("gRPC service reported as non-serving: %q", res.GetStatus().String())
+			checkResponse.Error = fmt.Errorf("gRPC service reported as non-serving: %q", res.GetStatus().String())
+			return
 		}
 
-		return nil
+		return
 	}
 }

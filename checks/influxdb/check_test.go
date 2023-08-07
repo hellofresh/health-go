@@ -16,7 +16,7 @@ func TestNew(t *testing.T) {
 	})
 
 	err := check(context.Background())
-	require.NoError(t, err)
+	require.NoError(t, err.Error)
 }
 
 func TestNewWithError(t *testing.T) {
@@ -25,7 +25,7 @@ func TestNewWithError(t *testing.T) {
 	})
 
 	err := check(context.Background())
-	require.Error(t, err)
+	require.Error(t, err.Error)
 }
 
 func getURL(t *testing.T) string {

@@ -46,14 +46,14 @@ func main() {
 		Name:      "rabbitmq",
 		Timeout:   time.Second * 5,
 		SkipOnErr: true,
-		Check: func(ctx context.Context) error {
+		Check: func(ctx context.Context) (healthResponse health.CheckResponse) {
 			// rabbitmq health check implementation goes here
-			return nil
+			return
 		}}, health.Config{
 		Name: "mongodb",
-		Check: func(ctx context.Context) error {
+		Check: func(ctx context.Context) (healthResponse health.CheckResponse) {
 			// mongo_db health check implementation goes here
-			return nil
+			return
 		},
 	},
 	))
@@ -96,14 +96,14 @@ func main() {
 		Name:      "rabbitmq",
 		Timeout:   time.Second * 5,
 		SkipOnErr: true,
-		Check: func(ctx context.Context) error {
+		Check: func(ctx context.Context) (healthResponse health.CheckResponse) {
 			// rabbitmq health check implementation goes here
-			return nil
+			return
 		}}, health.Config{
 		Name: "mongodb",
-		Check: func(ctx context.Context) error {
+		Check: func(ctx context.Context) (healthResponse health.CheckResponse) {
 			// mongo_db health check implementation goes here
-			return nil
+			return
 		},
 	},
 	))
@@ -141,7 +141,7 @@ curl localhost:3000/status
 HTTP/1.1 200 OK
 ```json
 {
-  "status": "OK",
+  "status": "passing",
   "timestamp": "2017-01-01T00:00:00.413567856+033:00",
   "system": {
     "version": "go1.8",
@@ -160,7 +160,7 @@ HTTP/1.1 200 OK
 HTTP/1.1 200 OK
 ```json
 {
-  "status": "Partially Available",
+  "status": "warning",
   "timestamp": "2017-01-01T00:00:00.413567856+033:00",
   "failures": {
     "rabbitmq": "Failed during rabbitmq health check"
@@ -182,7 +182,7 @@ HTTP/1.1 200 OK
 HTTP/1.1 503 Service Unavailable
 ```json
 {
-  "status": "Unavailable",
+  "status": "critical",
   "timestamp": "2017-01-01T00:00:00.413567856+033:00",
   "failures": {
     "mongodb": "Failed during mongodb health check"

@@ -3,6 +3,7 @@ package nats
 import (
 	"context"
 	"fmt"
+	"github.com/hellofresh/health-go/v5"
 
 	"github.com/nats-io/nats.go"
 )
@@ -14,19 +15,21 @@ type Config struct {
 }
 
 // New creates new NATS health check that verifies the status of the connection.
-func New(config Config) func(ctx context.Context) error {
-	return func(ctx context.Context) error {
+func New(config Config) func(ctx context.Context) health.CheckResponse {
+	return func(ctx context.Context) (checkResponse health.CheckResponse) {
 		nc, err := nats.Connect(config.DSN)
 		if err != nil {
-			return fmt.Errorf("nats health check failed on client creation: %w", err)
+			checkResponse.Error = fmt.Errorf("nats health check failed on client creation: %w", err)
+			return
 		}
 		defer nc.Close()
 
 		status := nc.Status()
 		if status != nats.CONNECTED {
-			return fmt.Errorf("nats health check failed as connection status is %s", status)
+			checkResponse.Error = fmt.Errorf("nats health check failed as connection status is %s", status)
+			return
 		}
 
-		return nil
+		return
 	}
 }

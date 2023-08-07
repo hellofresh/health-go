@@ -18,7 +18,7 @@ func TestNew(t *testing.T) {
 	})
 
 	err := check(context.Background())
-	require.NoError(t, err)
+	require.NoError(t, err.Error)
 }
 
 func TestConfig(t *testing.T) {

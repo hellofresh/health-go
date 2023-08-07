@@ -3,6 +3,7 @@ package rabbitmq
 import (
 	"context"
 	"fmt"
+	"github.com/hellofresh/health-go/v5"
 	"os"
 	"time"
 
@@ -46,54 +47,54 @@ type (
 // - binding a queue to the exchange with the defined routing key
 // - publishing a message to the exchange with the defined routing key
 // - consuming published message
-func New(config Config) func(ctx context.Context) error {
+func New(config Config) func(ctx context.Context) health.CheckResponse {
 	(&config).defaults()
 
-	return func(ctx context.Context) (checkErr error) {
+	return func(ctx context.Context) (checkResponse health.CheckResponse) {
 		conn, err := amqp.DialConfig(config.DSN, amqp.Config{
 			Dial: amqp.DefaultDial(config.DialTimeout),
 		})
 		if err != nil {
-			checkErr = fmt.Errorf("RabbitMQ health check failed on dial phase: %w", err)
+			checkResponse.Error = fmt.Errorf("RabbitMQ health check failed on dial phase: %w", err)
 			return
 		}
 		defer func() {
-			// override checkErr only if there were no other errors
-			if err := conn.Close(); err != nil && checkErr == nil {
-				checkErr = fmt.Errorf("RabbitMQ health check failed to close connection: %w", err)
+			// override checkResponse only if there were no other errors
+			if err := conn.Close(); err != nil && checkResponse.Error == nil {
+				checkResponse.Error = fmt.Errorf("RabbitMQ health check failed to close connection: %w", err)
 			}
 		}()
 
 		ch, err := conn.Channel()
 		if err != nil {
-			checkErr = fmt.Errorf("RabbitMQ health check failed on getting channel phase: %w", err)
+			checkResponse.Error = fmt.Errorf("RabbitMQ health check failed on getting channel phase: %w", err)
 			return
 		}
 		defer func() {
-			// override checkErr only if there were no other errors
-			if err := ch.Close(); err != nil && checkErr == nil {
-				checkErr = fmt.Errorf("RabbitMQ health check failed to close channel: %w", err)
+			// override checkResponse only if there were no other errors
+			if err := ch.Close(); err != nil && checkResponse.Error == nil {
+				checkResponse.Error = fmt.Errorf("RabbitMQ health check failed to close channel: %w", err)
 			}
 		}()
 
 		if err := ch.ExchangeDeclare(config.Exchange, "topic", true, false, false, false, nil); err != nil {
-			checkErr = fmt.Errorf("RabbitMQ health check failed during declaring exchange: %w", err)
+			checkResponse.Error = fmt.Errorf("RabbitMQ health check failed during declaring exchange: %w", err)
 			return
 		}
 
 		if _, err := ch.QueueDeclare(config.Queue, false, false, false, false, nil); err != nil {
-			checkErr = fmt.Errorf("RabbitMQ health check failed during declaring queue: %w", err)
+			checkResponse.Error = fmt.Errorf("RabbitMQ health check failed during declaring queue: %w", err)
 			return
 		}
 
 		if err := ch.QueueBind(config.Queue, config.RoutingKey, config.Exchange, false, nil); err != nil {
-			checkErr = fmt.Errorf("RabbitMQ health check failed during binding: %w", err)
+			checkResponse.Error = fmt.Errorf("RabbitMQ health check failed during binding: %w", err)
 			return
 		}
 
 		messages, err := ch.Consume(config.Queue, "", true, false, false, false, nil)
 		if err != nil {
-			checkErr = fmt.Errorf("RabbitMQ health check failed during consuming: %w", err)
+			checkResponse.Error = fmt.Errorf("RabbitMQ health check failed during consuming: %w", err)
 			return
 		}
 
@@ -109,17 +110,17 @@ func New(config Config) func(ctx context.Context) error {
 
 		p := amqp.Publishing{Body: []byte(time.Now().Format(time.RFC3339Nano))}
 		if err := ch.Publish(config.Exchange, config.RoutingKey, false, false, p); err != nil {
-			checkErr = fmt.Errorf("RabbitMQ health check failed during publishing: %w", err)
+			checkResponse.Error = fmt.Errorf("RabbitMQ health check failed during publishing: %w", err)
 			return
 		}
 
 		for {
 			select {
 			case <-time.After(config.ConsumeTimeout):
-				checkErr = fmt.Errorf("RabbitMQ health check failed due to consume timeout: %w", err)
+				checkResponse.Error = fmt.Errorf("RabbitMQ health check failed due to consume timeout: %w", err)
 				return
 			case <-ctx.Done():
-				checkErr = fmt.Errorf("RabbitMQ health check failed due "+
+				checkResponse.Error = fmt.Errorf("RabbitMQ health check failed due "+
 					"to health check listener disconnect: %w", ctx.Err())
 				return
 			case <-done:

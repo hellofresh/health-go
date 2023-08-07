@@ -24,7 +24,7 @@ func TestNew(t *testing.T) {
 	})
 
 	err := check(context.Background())
-	require.NoError(t, err)
+	require.NoError(t, err.Error)
 }
 
 func TestEnsureConnectionIsClosed(t *testing.T) {
@@ -52,7 +52,7 @@ func TestEnsureConnectionIsClosed(t *testing.T) {
 	ctx := context.Background()
 	for i := 0; i < 10; i++ {
 		err := check(ctx)
-		assert.NoError(t, err)
+		assert.NoError(t, err.Error)
 		time.Sleep(100 * time.Millisecond)
 	}
 

@@ -23,14 +23,14 @@ func TestNew(t *testing.T) {
 	})
 
 	err := check(context.Background())
-	require.NoError(t, err)
+	require.NoError(t, err.Error)
 }
 
 func TestNewWithError(t *testing.T) {
 	check := New(Config{})
 
 	err := check(context.Background())
-	require.Error(t, err)
+	require.Error(t, err.Error)
 }
 
 func initDB(t *testing.T) {

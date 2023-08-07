@@ -3,6 +3,7 @@ package mongo
 import (
 	"context"
 	"fmt"
+	"github.com/hellofresh/health-go/v5"
 	"time"
 
 	"go.mongodb.org/mongo-driver/mongo"
@@ -32,7 +33,7 @@ type Config struct {
 // New creates new MongoDB health check that verifies the following:
 // - connection establishing
 // - doing the ping command
-func New(config Config) func(ctx context.Context) error {
+func New(config Config) func(ctx context.Context) health.CheckResponse {
 	if config.TimeoutConnect == 0 {
 		config.TimeoutConnect = defaultTimeoutConnect
 	}
@@ -45,10 +46,10 @@ func New(config Config) func(ctx context.Context) error {
 		config.TimeoutPing = defaultTimeoutPing
 	}
 
-	return func(ctx context.Context) (checkErr error) {
+	return func(ctx context.Context) (checkResponse health.CheckResponse) {
 		client, err := mongo.NewClient(options.Client().ApplyURI(config.DSN))
 		if err != nil {
-			checkErr = fmt.Errorf("mongoDB health check failed on client creation: %w", err)
+			checkResponse.Error = fmt.Errorf("mongoDB health check failed on client creation: %w", err)
 			return
 		}
 
@@ -57,7 +58,7 @@ func New(config Config) func(ctx context.Context) error {
 
 		err = client.Connect(ctxConn)
 		if err != nil {
-			checkErr = fmt.Errorf("mongoDB health check failed on connect: %w", err)
+			checkResponse.Error = fmt.Errorf("mongoDB health check failed on connect: %w", err)
 			return
 		}
 
@@ -65,9 +66,9 @@ func New(config Config) func(ctx context.Context) error {
 			ctxDisc, cancelDisc := context.WithTimeout(ctx, config.TimeoutDisconnect)
 			defer cancelDisc()
 
-			// override checkErr only if there were no other errors
-			if err := client.Disconnect(ctxDisc); err != nil && checkErr == nil {
-				checkErr = fmt.Errorf("mongoDB health check failed on closing connection: %w", err)
+			// override checkResponse only if there were no other errors
+			if err := client.Disconnect(ctxDisc); err != nil && checkResponse.Error == nil {
+				checkResponse.Error = fmt.Errorf("mongoDB health check failed on closing connection: %w", err)
 			}
 		}()
 
@@ -76,7 +77,7 @@ func New(config Config) func(ctx context.Context) error {
 
 		err = client.Ping(ctxPing, readpref.Primary())
 		if err != nil {
-			checkErr = fmt.Errorf("mongoDB health check failed on ping: %w", err)
+			checkResponse.Error = fmt.Errorf("mongoDB health check failed on ping: %w", err)
 			return
 		}
 
