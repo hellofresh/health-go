@@ -6,7 +6,7 @@ require (
 	github.com/bradfitz/gomemcache v0.0.0-20230611145640-acc696258285
 	github.com/go-redis/redis/v9 v9.0.0-rc.2
 	github.com/go-sql-driver/mysql v1.7.1
-	github.com/gocql/gocql v1.5.2
+	github.com/gocql/gocql v1.6.0
 	github.com/influxdata/influxdb-client-go/v2 v2.12.3
 	github.com/jackc/pgx/v4 v4.18.1
 	github.com/jackc/pgx/v5 v5.4.3
