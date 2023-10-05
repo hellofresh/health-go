@@ -28,10 +28,16 @@ func TestNew(t *testing.T) {
 
 func TestNew_withClusterConfig(t *testing.T) {
 	initDB(t)
+	cluster := gocql.NewCluster(getHosts(t)...)
+	cluster.Keyspace = KEYSPACE
+	session, err := cluster.CreateSession()
+	require.NoError(t, err)
+
 	check := New(Config{
-		ClusterConfig: gocql.NewCluster(getHosts(t)...),
+		Session: session,
 	})
-	err := check(context.Background())
+
+	err = check(context.Background())
 	require.NoError(t, err)
 }
 
