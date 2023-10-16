@@ -22,20 +22,12 @@ type Config struct {
 // New creates new Cassandra health check that verifies that a connection exists and can be used to query the cluster.
 func New(config Config) func(ctx context.Context) error {
 	return func(ctx context.Context) error {
-		var session *gocql.Session
-		var err error
-		if config.Session == nil && (len(config.Hosts) < 1 || len(config.Keyspace) < 1) {
-			return errors.New("cassandra cluster config or keyspace name and hosts are required to initialize cassandra health check")
+		shutdown, session, err := initSession(config)
+		if err != nil {
+			return fmt.Errorf("cassandra health check failed on connect: %w", err)
 		}
 
-		if config.Session != nil {
-			session = config.Session
-		} else {
-			cluster := gocql.NewCluster(config.Hosts...)
-			cluster.Keyspace = config.Keyspace
-			session, err = cluster.CreateSession()
-			defer session.Close()
-		}
+		defer shutdown()
 
 		if err != nil {
 			return fmt.Errorf("cassandra health check failed on connect: %w", err)
@@ -48,4 +40,23 @@ func New(config Config) func(ctx context.Context) error {
 
 		return nil
 	}
+}
+
+func initSession(c Config) (func(), *gocql.Session, error) {
+	if c.Session != nil {
+		return func() {}, c.Session, nil
+	}
+
+	if len(c.Hosts) < 1 || len(c.Keyspace) < 1 {
+		return nil, nil, errors.New("cassandra cluster config or keyspace name and hosts are required to initialize cassandra health check")
+	}
+
+	cluster := gocql.NewCluster(c.Hosts...)
+	cluster.Keyspace = c.Keyspace
+	session, err := cluster.CreateSession()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return session.Close, session, err
 }
