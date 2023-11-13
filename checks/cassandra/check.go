@@ -33,7 +33,7 @@ func New(config Config) func(ctx context.Context) error {
 			return fmt.Errorf("cassandra health check failed on connect: %w", err)
 		}
 
-		err = session.Query("DESCRIBE KEYSPACES;").WithContext(ctx).Exec()
+		err = session.Query("SELECT * FROM system_schema.keyspaces;").WithContext(ctx).Exec()
 		if err != nil {
 			return fmt.Errorf("cassandra health check failed on describe: %w", err)
 		}
