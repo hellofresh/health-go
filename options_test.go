@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace"
+	"go.opentelemetry.io/otel/trace/embedded"
 )
 
 func TestWithChecks(t *testing.T) {
@@ -34,6 +35,7 @@ func TestWithChecks(t *testing.T) {
 
 type mockTracerProvider struct {
 	mock.Mock
+	embedded.TracerProvider
 }
 
 func (m *mockTracerProvider) Tracer(instrumentationName string, opts ...trace.TracerOption) trace.Tracer {
