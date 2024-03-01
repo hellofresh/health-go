@@ -15,7 +15,7 @@ type Config struct {
 
 // New creates new NATS health check that verifies the status of the connection.
 func New(config Config) func(ctx context.Context) error {
-	return func(ctx context.Context) error {
+	return func(context.Context) error {
 		nc, err := nats.Connect(config.DSN)
 		if err != nil {
 			return fmt.Errorf("nats health check failed on client creation: %w", err)
