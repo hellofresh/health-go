@@ -8,7 +8,7 @@ require (
 	github.com/gocql/gocql v1.6.0
 	github.com/influxdata/influxdb-client-go/v2 v2.13.0
 	github.com/jackc/pgx/v4 v4.18.3
-	github.com/jackc/pgx/v5 v5.5.3
+	github.com/jackc/pgx/v5 v5.5.5
 	github.com/lib/pq v1.10.9
 	github.com/nats-io/nats.go v1.33.1
 	github.com/rabbitmq/amqp091-go v1.9.0
