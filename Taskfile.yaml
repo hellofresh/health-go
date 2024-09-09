@@ -57,6 +57,8 @@ tasks:
         sh: docker-compose port cassandra 9042
       NATS_HOST:
         sh: docker-compose port nats 4222
+      ELASTICSEARCH_HOST:
+        sh: docker-compose port elasticsearch 9200
 
     env:
       CGO_ENABLED: '{{if .RACE}}1{{else}}0{{end}}'
@@ -72,3 +74,4 @@ tasks:
       HEALTH_GO_INFLUXDB_URL: 'http://{{.INFLUX_HOST}}'
       HEALTH_GO_CASSANDRA_HOST: '{{.CASSANDRA_HOST}}'
       HEALTH_GO_NATS_DSN: 'nats://{{.NATS_HOST}}'
+      HEALTH_GO_ES_DSN: '{{.ELASTICSEARCH_HOST}}'
