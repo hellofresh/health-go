@@ -10,6 +10,7 @@ import (
 	healthHttp "github.com/hellofresh/health-go/v5/checks/http"
 	healthMySql "github.com/hellofresh/health-go/v5/checks/mysql"
 	healthPg "github.com/hellofresh/health-go/v5/checks/postgres"
+	healthTcp "github.com/hellofresh/health-go/v5/checks/tcp"
 )
 
 func main() {
@@ -35,6 +36,17 @@ func main() {
 		SkipOnErr: true,
 		Check: healthHttp.New(healthHttp.Config{
 			URL: `http://example.com`,
+		}),
+	})
+
+	// tcp health check example
+	h.Register(health.Config{
+		Name:      "tcp-check",
+		Timeout:   time.Second * 5,
+		SkipOnErr: true,
+		Check: healthTcp.New(healthTcp.Config{
+			Host: `example.com`,
+			Port: 1123,
 		}),
 	})
 

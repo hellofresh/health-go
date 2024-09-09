@@ -13,6 +13,7 @@
   * gRPC
   * Memcached
   * Nats
+  * TCP
 
 ## Usage
 
