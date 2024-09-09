@@ -15,7 +15,7 @@ require (
 	github.com/redis/go-redis/v9 v9.5.1
 	github.com/stretchr/testify v1.9.0
 	github.com/vitorsalgado/mocha/v2 v2.0.2
-	go.mongodb.org/mongo-driver v1.14.0
+	go.mongodb.org/mongo-driver v1.15.0
 	go.opentelemetry.io/otel v1.24.0
 	go.opentelemetry.io/otel/trace v1.24.0
 	google.golang.org/grpc v1.62.1
