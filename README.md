@@ -15,6 +15,7 @@
   * Memcached
   * InfluxDB
   * Nats
+  * ClickHouse
 
 ## Usage
 
