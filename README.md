@@ -120,7 +120,7 @@ func main() {
 
 	r := chi.NewRouter()
 	r.Get("/status", h.HandlerFunc)
-	http.ListenAndServe(":3000", nil)
+	http.ListenAndServe(":3000", r)
 }
 ```
 
