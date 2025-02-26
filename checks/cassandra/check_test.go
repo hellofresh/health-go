@@ -71,7 +71,7 @@ func getHosts(t *testing.T) []string {
 	host, ok := os.LookupEnv(HOST)
 	require.True(t, ok, fmt.Sprintf("Host is: %s", host))
 
-	// "docker-compose port <service> <port>" returns 0.0.0.0:XXXX locally, change it to local port
+	// "docker compose port <service> <port>" returns 0.0.0.0:XXXX locally, change it to local port
 	host = strings.Replace(host, "0.0.0.0:", "127.0.0.1:", 1)
 
 	return []string{host}

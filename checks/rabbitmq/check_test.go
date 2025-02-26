@@ -38,7 +38,7 @@ func getDSN(t *testing.T) string {
 	mqDSN, ok := os.LookupEnv(mqDSNEnv)
 	require.True(t, ok)
 
-	// "docker-compose port <service> <port>" returns 0.0.0.0:XXXX locally, change it to local port
+	// "docker compose port <service> <port>" returns 0.0.0.0:XXXX locally, change it to local port
 	mqDSN = strings.Replace(mqDSN, "0.0.0.0:", "127.0.0.1:", 1)
 
 	return mqDSN
