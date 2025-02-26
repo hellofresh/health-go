@@ -41,16 +41,8 @@ jobs:
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Install docker-compose v2
-        shell: bash
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          gh release -R docker/compose download -p docker-compose-linux-x86_64
-          mv -f docker-compose-linux-x86_64 docker-compose
-          sudo mv /usr/local/bin/docker-compose /usr/local/bin/docker-compose-v2
-          sudo install docker-compose /usr/local/bin/
-          docker-compose --version
+      - name: Install docker compose
+        uses: docker/setup-compose-action@v1
 
       - run: task test
 
