@@ -4,7 +4,7 @@ go 1.20
 
 require (
 	github.com/bradfitz/gomemcache v0.0.0-20230905024940-24af94b03874
-	github.com/go-sql-driver/mysql v1.7.1
+	github.com/go-sql-driver/mysql v1.9.2
 	github.com/gocql/gocql v1.6.0
 	github.com/influxdata/influxdb-client-go/v2 v2.13.0
 	github.com/jackc/pgx/v4 v4.18.3
@@ -22,6 +22,7 @@ require (
 )
 
 require (
+	filippo.io/edwards25519 v1.1.0 // indirect
 	github.com/apapsch/go-jsonmerge/v2 v2.0.0 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
