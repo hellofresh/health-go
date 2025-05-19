@@ -2,7 +2,7 @@
 # https://github.com/hellofresh/github-automation/blob/master/modules/repository/shared-workflows/pr-dependency-review.yml
 
 # This workflow is for dependency review. It is used to check vulnerability in dependencies before merging the PR.
-# It is managed by squad-application-security.
+# It is managed by squad-vulnerability-management.
 
 ---
 name: Dependency Review PR
