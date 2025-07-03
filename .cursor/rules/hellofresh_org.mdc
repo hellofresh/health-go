@@ -1,0 +1,20 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+**HelloFresh Development Guidelines**
+
+You must follow this org-wide development guidelines. This would have precedence over other guidelines.
+
+- Documentation might be available:
+    - `docs` directory
+    - Internal knowledgebase search tools
+
+- GitHub branch should be formated like following:
+    - {feature|patch}/{JIRA_TICKET_NUMBER}
+
+- When applicable, ask the user if you need any clarification or information before proceeding
+
+- After each task, always commit each changes.
+- Each commit message must contain `[AI_Code]`
