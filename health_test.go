@@ -6,6 +6,7 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"runtime"
 	"testing"
 	"time"
 
@@ -150,4 +151,39 @@ func TestHealth_Measure(t *testing.T) {
 	result = h.Measure(context.Background())
 
 	assert.NotNil(t, result.System)
+}
+
+func TestHealth_CheckTimeoutGoroutineLeak(t *testing.T) {
+	h, err := New()
+	require.NoError(t, err)
+
+	err = h.Register(Config{
+		Name:    "leak-check-timeout",
+		Timeout: 100 * time.Millisecond,
+		Check: func(ctx context.Context) error {
+			time.Sleep(1 * time.Second)
+			return errors.New("leak-check-timeout")
+		},
+	})
+	require.NoError(t, err)
+
+	// Allow any initial goroutines to settle
+	time.Sleep(100 * time.Millisecond)
+	before := runtime.NumGoroutine()
+
+	for i := 0; i < 10; i++ {
+		res := h.Measure(context.Background())
+		assert.Equal(t, StatusUnavailable, res.Status)
+		assert.Equal(t, string(StatusTimeout), res.Failures["leak-check-timeout"])
+	}
+
+	// Wait to allow any leaked goroutines to accumulate
+	// We deliberately set it a little bit greater than sleep in our CheckFunc
+	// so that we know that that goroutine should be finished by now.
+	time.Sleep(1500 * time.Millisecond)
+	after := runtime.NumGoroutine()
+
+	if after-before > 0 {
+		t.Errorf("potential goroutine leak: before=%d after=%d", before, after)
+	}
 }

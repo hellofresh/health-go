@@ -193,7 +193,7 @@ func (h *Health) Measure(ctx context.Context) Check {
 				wg.Done()
 			}()
 
-			resCh := make(chan error)
+			resCh := make(chan error, 1)
 
 			go func() {
 				resCh <- c.Check(ctx)
