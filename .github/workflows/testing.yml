@@ -16,11 +16,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-go@v3
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
         with:
           go-version-file: ./go.mod
-      - uses: golangci/golangci-lint-action@v3
+      - uses: golangci/golangci-lint-action@v8
 
   test:
     name: Test
@@ -31,13 +31,13 @@ jobs:
         go-version: [ '1.23', '1.24' ]
 
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-go@v3
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
         with:
           go-version: ${{ matrix.go-version }}
 
       - name: Install Task
-        uses: arduino/setup-task@v1
+        uses: arduino/setup-task@v2
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
 
