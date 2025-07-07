@@ -1,20 +1,21 @@
 ---
 # See https://golangci-lint.run/usage/configuration/#config-file for more information
+version: "2"
 run:
   timeout: 5m
 linters:
-  disable-all: true
+  default: none
+  enable:
+    - revive
+  settings:
+    revive:
+      rules:
+        - name: package-comments
+          disabled: true
+formatters:
   enable:
     - gofmt
-    - revive
     - goimports
-  fast: false
-linters-settings:
-  gofmt:
-    simplify: false
-issues:
-  exclude-use-default: false
-  exclude-rules: 
-    - linters:
-        - revive
-      text: "package-comments:"
+  settings:
+    gofmt:
+      simplify: false
