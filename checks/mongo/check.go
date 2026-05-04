@@ -2,6 +2,7 @@ package mongo
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -16,6 +17,8 @@ const (
 	defaultTimeoutPing       = 5 * time.Second
 )
 
+var errNilClient = errors.New("mongoDB health check failed on ping: nil mongo client")
+
 // Config is the MongoDB checker configuration settings container.
 type Config struct {
 	// DSN is the MongoDB instance connection DSN. Required.
@@ -29,9 +32,38 @@ type Config struct {
 	TimeoutPing time.Duration
 }
 
+// NewPingCheck creates a MongoDB health check using an existing client.
+// The caller is responsible for managing the client's lifecycle.
+func NewPingCheck(client *mongo.Client, timeout time.Duration) func(ctx context.Context) error {
+	if client == nil {
+		return func(context.Context) error {
+			return errNilClient
+		}
+	}
+
+	if timeout == 0 {
+		timeout = defaultTimeoutPing
+	}
+
+	return func(ctx context.Context) error {
+		ctxPing, cancelPing := context.WithTimeout(ctx, timeout)
+		defer cancelPing()
+
+		err := client.Ping(ctxPing, readpref.Primary())
+		if err != nil {
+			return fmt.Errorf("mongoDB health check failed on ping: %w", err)
+		}
+
+		return nil
+	}
+}
+
 // New creates new MongoDB health check that verifies the following:
 // - connection establishing
 // - doing the ping command
+//
+// Deprecated: use NewPingCheck instead. It uses an existing *mongo.Client
+// to avoid connection churn.
 func New(config Config) func(ctx context.Context) error {
 	if config.TimeoutConnect == 0 {
 		config.TimeoutConnect = defaultTimeoutConnect
