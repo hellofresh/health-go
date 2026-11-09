@@ -1,6 +1,8 @@
+---
+# $schema: https://raw.githubusercontent.com/octo-sts/app/refs/heads/main/pkg/octosts/octosts.TrustPolicy.json
 issuer: https://token.actions.githubusercontent.com
 subject_pattern: repo:hellofresh/health-go:(pull_request|ref:refs/heads/master)
 claim_pattern:
-  repository_owner_id: 4430027
+  repository_owner_id: "4430027"
 permissions:
   contents: read
